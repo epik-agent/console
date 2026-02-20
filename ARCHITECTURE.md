@@ -60,24 +60,24 @@ src/
 
 ## NATS topics
 
-| Topic              | Direction        | Purpose                              |
-|--------------------|------------------|--------------------------------------|
-| `epik.supervisor`  | → Supervisor     | Assignments, CI reports, user input  |
-| `epik.worker.0`    | → Worker 0       | Issue assignments, injected messages |
-| `epik.worker.1`    | → Worker 1       | Issue assignments, injected messages |
-| `epik.worker.2`    | → Worker 2       | Issue assignments, injected messages |
-| `epik.log`         | → Server         | All agent events (for persistence)   |
+| Topic             | Direction    | Purpose                              |
+| ----------------- | ------------ | ------------------------------------ |
+| `epik.supervisor` | → Supervisor | Assignments, CI reports, user input  |
+| `epik.worker.0`   | → Worker 0   | Issue assignments, injected messages |
+| `epik.worker.1`   | → Worker 1   | Issue assignments, injected messages |
+| `epik.worker.2`   | → Worker 2   | Issue assignments, injected messages |
+| `epik.log`        | → Server     | All agent events (for persistence)   |
 
 ## REST API
 
-| Method | Path              | Description                                      |
-|--------|-------------------|--------------------------------------------------|
-| GET    | `/api/issues`     | Returns `IssueGraph` for `?repo=owner/repo`      |
-| GET    | `/api/pool`       | Returns `PoolState` (agent statuses)             |
-| POST   | `/api/start`      | Triggers supervisor's first NATS message         |
-| POST   | `/api/message`    | Injects user message into named agent            |
-| POST   | `/api/interrupt`  | Interrupts named agent                           |
-| WS     | `/ws`             | Streams `ServerMessage` envelopes to browser     |
+| Method | Path             | Description                                  |
+| ------ | ---------------- | -------------------------------------------- |
+| GET    | `/api/issues`    | Returns `IssueGraph` for `?repo=owner/repo`  |
+| GET    | `/api/pool`      | Returns `PoolState` (agent statuses)         |
+| POST   | `/api/start`     | Triggers supervisor's first NATS message     |
+| POST   | `/api/message`   | Injects user message into named agent        |
+| POST   | `/api/interrupt` | Interrupts named agent                       |
+| WS     | `/ws`            | Streams `ServerMessage` envelopes to browser |
 
 ## Agent roles
 
@@ -91,6 +91,7 @@ the server via the `nats_publish` custom tool.
 ### Workers (×3)
 
 Each worker waits for an assignment on its NATS topic. On receipt it:
+
 1. Checks out the repo into a temp directory.
 2. Implements the issue following TDD (write tests first).
 3. Runs `npm run lint` and `npm test` to verify.
@@ -133,50 +134,50 @@ type AgentEvent =
   | { kind: 'turn_end' }
   | { kind: 'error'; message: string }
   | { kind: 'inject'; text: string }
-  | { kind: 'compaction'; summary: string };
+  | { kind: 'compaction'; summary: string }
 ```
 
 ### IssueGraph
 
 ```typescript
 interface IssueNode {
-  number: number;
-  title: string;
-  state: 'open' | 'closed';
-  type: 'Feature' | 'Task' | 'Bug' | null;
-  external: boolean;
-  blockedBy: number[];
+  number: number
+  title: string
+  state: 'open' | 'closed'
+  type: 'Feature' | 'Task' | 'Bug' | null
+  external: boolean
+  blockedBy: number[]
 }
 
 interface IssueGraph {
-  nodes: IssueNode[];
+  nodes: IssueNode[]
 }
 ```
 
 ### PoolState
 
 ```typescript
-type WorkerRole = 'supervisor' | 'worker';
-type WorkerStatus = 'idle' | 'busy';
+type WorkerRole = 'supervisor' | 'worker'
+type WorkerStatus = 'idle' | 'busy'
 
 interface WorkerState {
-  id: AgentId;
-  role: WorkerRole;
-  status: WorkerStatus;
-  sessionId: string | undefined;
+  id: AgentId
+  role: WorkerRole
+  status: WorkerStatus
+  sessionId: string | undefined
 }
 
-type PoolState = WorkerState[];
+type PoolState = WorkerState[]
 ```
 
 ### ServerMessage (WebSocket envelope)
 
 ```typescript
-type AgentId = 'supervisor' | 'worker-0' | 'worker-1' | 'worker-2';
+type AgentId = 'supervisor' | 'worker-0' | 'worker-1' | 'worker-2'
 
 type ServerMessage =
   | { type: 'pool_state'; pool: PoolState }
-  | { type: 'agent_event'; agentId: AgentId; event: AgentEvent };
+  | { type: 'agent_event'; agentId: AgentId; event: AgentEvent }
 ```
 
 ## Development
@@ -198,22 +199,22 @@ Open `http://localhost:5173/?repo=owner/repo`.
 
 ### Scripts
 
-| Script            | Description                              |
-|-------------------|------------------------------------------|
-| `npm run dev`     | Vite + Express server (concurrently)     |
-| `npm run server`  | Express server only (tsx watch)          |
-| `npm run build`   | TypeScript + Vite production build       |
-| `npm run lint`    | ESLint                                   |
-| `npm run format`  | Prettier                                 |
-| `npm test`        | Vitest                                   |
+| Script           | Description                          |
+| ---------------- | ------------------------------------ |
+| `npm run dev`    | Vite + Express server (concurrently) |
+| `npm run server` | Express server only (tsx watch)      |
+| `npm run build`  | TypeScript + Vite production build   |
+| `npm run lint`   | ESLint                               |
+| `npm run format` | Prettier                             |
+| `npm test`       | Vitest                               |
 
 ## Reuse from Epik
 
-| Epik source                        | Builder destination            | Changes                        |
-|------------------------------------|--------------------------------|--------------------------------|
-| `src/renderer/chatReducer.ts`      | `src/client/chatReducer.ts`    | None                           |
-| `src/renderer/theme.ts`            | `src/client/theme.ts`          | Drop `PersonaId` import        |
-| `src/renderer/utils.ts`            | `src/client/utils.ts`          | None                           |
-| `src/renderer/CodePane.tsx`        | `src/client/ConsolePane.tsx`   | Remove Mermaid; replace window.api |
-| `src/agent/runner.ts`              | `src/server/runner.ts`         | Remove Electron; add nats_publish |
-| `src/agent/types.ts`               | `src/client/types.ts` (partial) | AgentEvent shape reused        |
+| Epik source                   | Builder destination             | Changes                            |
+| ----------------------------- | ------------------------------- | ---------------------------------- |
+| `src/renderer/chatReducer.ts` | `src/client/chatReducer.ts`     | None                               |
+| `src/renderer/theme.ts`       | `src/client/theme.ts`           | Drop `PersonaId` import            |
+| `src/renderer/utils.ts`       | `src/client/utils.ts`           | None                               |
+| `src/renderer/CodePane.tsx`   | `src/client/ConsolePane.tsx`    | Remove Mermaid; replace window.api |
+| `src/agent/runner.ts`         | `src/server/runner.ts`          | Remove Electron; add nats_publish  |
+| `src/agent/types.ts`          | `src/client/types.ts` (partial) | AgentEvent shape reused            |
