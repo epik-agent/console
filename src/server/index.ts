@@ -28,8 +28,13 @@ app.get('/api/issues', async (req, res) => {
     res.status(400).json({ error: 'Missing required query parameter: repo' })
     return
   }
+  const [owner, repoName] = repo.split('/')
+  if (!owner || !repoName) {
+    res.status(400).json({ error: 'repo must be in owner/repo format' })
+    return
+  }
   try {
-    const graph = await loadIssueGraph(repo)
+    const graph = await loadIssueGraph(owner, repoName)
     res.json(graph)
   } catch (err) {
     res.status(500).json({ error: String(err) })
