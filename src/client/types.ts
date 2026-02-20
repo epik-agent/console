@@ -101,3 +101,17 @@ export type CompactionMessage = { role: 'compaction'; summary: string }
 
 /** A single entry in the chat history. */
 export type Message = UserMessage | AssistantMessage | CompactionMessage
+
+// ---------------------------------------------------------------------------
+// Agent configuration
+// ---------------------------------------------------------------------------
+
+/** Configuration for a single agent runner. */
+export interface AgentConfig {
+  /** Claude model identifier. */
+  model: string
+  /** Working directory for the agent process. */
+  cwd: string
+  /** Optional system prompt override. */
+  systemPrompt: string | undefined
+}

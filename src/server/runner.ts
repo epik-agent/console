@@ -42,6 +42,12 @@ export interface RunAgentOptions {
   onSessionId: (id: string) => void
   /** NATS connection used to publish messages from the `nats_publish` custom tool. */
   natsClient: NatsConnection
+  /**
+   * Optional callback invoked immediately after the query iterator is created,
+   * before the event loop starts. Provides the interrupt function for early
+   * cancellation of the turn. Used by the agent pool to support mid-turn interrupts.
+   */
+  onInterruptReady?: (interrupt: () => void) => void
 }
 
 /**
@@ -85,6 +91,13 @@ export async function runAgent(opts: RunAgentOptions): Promise<{ interrupt?: () 
         : {}),
     },
   })
+
+  // Expose the interrupt handle immediately after the query is created, before
+  // the event loop starts. This allows callers to cancel mid-turn.
+  const messagesWithInterrupt = messages as { interrupt?: () => void }
+  if (opts.onInterruptReady && messagesWithInterrupt.interrupt) {
+    opts.onInterruptReady(messagesWithInterrupt.interrupt)
+  }
 
   for await (const msg of messages as AsyncIterable<unknown>) {
     const m = msg as { type: string; subtype?: string; is_error?: boolean }
