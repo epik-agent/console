@@ -1,9 +1,14 @@
-import { describe, it, expect, afterAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 
 // These tests require a running nats-server on localhost:4222
 // Run: nats-server &
 
 describe('nats module', () => {
+  beforeAll(() => {
+    // Reset the module registry so this file always imports the real nats
+    // module, never a vi.doMock() stub installed by another test file.
+    vi.resetModules()
+  })
   it('exports topic constants matching architecture spec', async () => {
     const { TOPIC_SUPERVISOR, TOPIC_WORKER_0, TOPIC_WORKER_1, TOPIC_WORKER_2, TOPIC_LOG } =
       await import('../server/nats.ts')

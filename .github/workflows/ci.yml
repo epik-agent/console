@@ -8,6 +8,11 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      nats:
+        image: nats:latest
+        ports:
+          - 4222:4222
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,7 +25,7 @@ jobs:
           key: node-modules-${{ hashFiles('package-lock.json') }}
       - if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
-      - run: npm test -- --coverage --exclude 'src/tests/*.integration.test.ts'
+      - run: npm test -- --coverage
       - uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
