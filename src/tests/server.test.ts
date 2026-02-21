@@ -181,11 +181,8 @@ describe('WebSocket /ws', () => {
         const addr = serverModule.server.address() as { port: number }
         const ws = new WebSocket(`ws://localhost:${addr.port}/ws`)
 
-        const received: ServerMessage[] = []
-
         ws.on('message', (data) => {
           const msg: ServerMessage = JSON.parse(data.toString())
-          received.push(msg)
 
           // After receiving pool_state, trigger an agent event
           if (msg.type === 'pool_state') {
