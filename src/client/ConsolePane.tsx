@@ -7,7 +7,7 @@ import { chatReducer, type ChatState } from './chatReducer'
 import { themes } from './theme'
 import type { AgentEvent, AgentId, AssistantMessage, Block } from './types'
 import { unescapeJsonString } from './utils'
-import type { Palette } from './theme'
+import type { Palette, Theme } from './theme'
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -223,6 +223,8 @@ interface ConsolePaneProps {
   onSend: (text: string) => void
   /** Called when the user presses Escape to interrupt an in-progress turn. */
   onInterrupt: () => void
+  /** Active colour theme; defaults to `'dark'`. */
+  theme?: Theme
 }
 
 /**
@@ -234,8 +236,8 @@ interface ConsolePaneProps {
  * Pressing Escape while the agent is busy fires `onInterrupt`.
  */
 export default function ConsolePane(props: ConsolePaneProps) {
-  const { events, onSend, onInterrupt } = props
-  const palette = themes['dark']
+  const { events, onSend, onInterrupt, theme = 'dark' } = props
+  const palette = themes[theme]
   const s = makeStyles(palette)
 
   const [{ messages, busy }, dispatch] = useReducer(

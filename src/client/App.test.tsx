@@ -30,6 +30,7 @@ vi.mock('react-force-graph-2d', () => ({
 const mockFetch = vi.fn()
 
 beforeEach(() => {
+  localStorage.clear()
   mockFetch.mockResolvedValue({
     ok: true,
     json: async () => ({ nodes: [] }),
@@ -202,6 +203,68 @@ describe('App', () => {
       const { container } = render(<App />)
       const toolbar = container.querySelector('[aria-label="toolbar"]') as HTMLElement
       expect(toolbar.style.borderBottomColor).toBe(hexToRgb(themes.dark.border.strong))
+    })
+  })
+
+  describe('theme toggle button', () => {
+    it('renders a toggle button in the toolbar', () => {
+      render(<App />)
+      expect(screen.getByRole('button', { name: /switch to light mode/i })).toBeInTheDocument()
+    })
+
+    it('shows sun icon (☀) in dark mode', () => {
+      render(<App />)
+      const btn = screen.getByRole('button', { name: /switch to light mode/i })
+      expect(btn.textContent).toBe('☀')
+    })
+
+    it('shows moon icon (🌙) after toggling to light mode', async () => {
+      const user = (await import('@testing-library/user-event')).default.setup()
+      render(<App />)
+      const btn = screen.getByRole('button', { name: /switch to light mode/i })
+      await user.click(btn)
+      expect(screen.getByRole('button', { name: /switch to dark mode/i }).textContent).toBe('🌙')
+    })
+
+    it('aria-label flips between modes on toggle', async () => {
+      const user = (await import('@testing-library/user-event')).default.setup()
+      render(<App />)
+      const btn = screen.getByRole('button', { name: /switch to light mode/i })
+      await user.click(btn)
+      expect(screen.getByRole('button', { name: /switch to dark mode/i })).toBeInTheDocument()
+    })
+
+    it('toolbar background changes to light bar color after toggle', async () => {
+      const user = (await import('@testing-library/user-event')).default.setup()
+      const { container } = render(<App />)
+      const btn = screen.getByRole('button', { name: /switch to light mode/i })
+      await user.click(btn)
+      const toolbar = container.querySelector('[aria-label="toolbar"]') as HTMLElement
+      expect(toolbar.style.background).toBe(hexToRgb(themes.light.bg.bar))
+    })
+
+    it('root background changes to light root color after toggle', async () => {
+      const user = (await import('@testing-library/user-event')).default.setup()
+      const { container } = render(<App />)
+      const btn = screen.getByRole('button', { name: /switch to light mode/i })
+      await user.click(btn)
+      const root = container.firstElementChild as HTMLElement
+      expect(root.style.background).toBe(hexToRgb(themes.light.bg.root))
+    })
+
+    it('writes theme to localStorage after toggle', async () => {
+      const user = (await import('@testing-library/user-event')).default.setup()
+      render(<App />)
+      const btn = screen.getByRole('button', { name: /switch to light mode/i })
+      await user.click(btn)
+      expect(localStorage.getItem('theme')).toBe('light')
+    })
+
+    it('renders in light mode when localStorage is pre-set to light', () => {
+      localStorage.setItem('theme', 'light')
+      const { container } = render(<App />)
+      const toolbar = container.querySelector('[aria-label="toolbar"]') as HTMLElement
+      expect(toolbar.style.background).toBe(hexToRgb(themes.light.bg.bar))
     })
   })
 

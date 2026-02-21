@@ -7,3 +7,13 @@
 body {
   margin: 0;
 }
+
+/* Override hljs theme based on html[data-theme] */
+:root[data-theme='dark'] .hljs {
+  color: #c9d1d9;
+  background: #0d1117;
+}
+:root[data-theme='light'] .hljs {
+  color: #24292e;
+  background: #ffffff;
+}

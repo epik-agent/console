@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import ConsolePane from './ConsolePane'
 import { themes } from './theme'
+import type { Palette, Theme } from './theme'
 import type { AgentEvent, AgentId, PoolState, WorkerState } from './types'
-
-const palette = themes.dark
 
 // ---------------------------------------------------------------------------
 // Types
@@ -28,6 +27,8 @@ interface AgentTabsProps {
    * @param agentId - Agent whose turn should be cancelled.
    */
   onInterrupt: (agentId: AgentId) => void
+  /** Active colour theme; defaults to `'dark'`. */
+  theme?: Theme
 }
 
 // ---------------------------------------------------------------------------
@@ -68,9 +69,10 @@ function workerStatus(pool: PoolState, id: AgentId): 'idle' | 'busy' {
 /**
  * Small pill badge showing `Idle` (grey) or `Busy` (amber) next to a tab label.
  *
- * @param status - Current agent status.
+ * @param status  - Current agent status.
+ * @param palette - Active colour palette for theming.
  */
-function StatusBadge({ status }: { status: 'idle' | 'busy' }) {
+function StatusBadge({ status, palette }: { status: 'idle' | 'busy'; palette: Palette }) {
   const isBusy = status === 'busy'
   return (
     <span
@@ -101,7 +103,14 @@ function StatusBadge({ status }: { status: 'idle' | 'busy' }) {
  * is preserved when the user switches tabs. Inactive panels are hidden with
  * `display: none` rather than unmounted.
  */
-export default function AgentTabs({ pool, events, onSend, onInterrupt }: AgentTabsProps) {
+export default function AgentTabs({
+  pool,
+  events,
+  onSend,
+  onInterrupt,
+  theme = 'dark',
+}: AgentTabsProps) {
+  const palette = themes[theme]
   const [activeId, setActiveId] = useState<AgentId>('supervisor')
 
   return (
@@ -131,9 +140,7 @@ export default function AgentTabs({ pool, events, onSend, onInterrupt }: AgentTa
                 padding: '8px 16px',
                 background: isActive ? palette.bg.root : 'transparent',
                 border: 'none',
-                borderBottom: isActive
-                  ? `2px solid ${palette.accent}`
-                  : '2px solid transparent',
+                borderBottom: isActive ? `2px solid ${palette.accent}` : '2px solid transparent',
                 color: isActive ? palette.text.primary : palette.text.muted,
                 cursor: 'pointer',
                 fontSize: '13px',
@@ -142,7 +149,7 @@ export default function AgentTabs({ pool, events, onSend, onInterrupt }: AgentTa
               }}
             >
               {tabLabel(id)}
-              <StatusBadge status={status} />
+              <StatusBadge status={status} palette={palette} />
             </button>
           )
         })}
@@ -166,6 +173,7 @@ export default function AgentTabs({ pool, events, onSend, onInterrupt }: AgentTa
             events={events[id] ?? []}
             onSend={(text) => onSend(id, text)}
             onInterrupt={() => onInterrupt(id)}
+            theme={theme}
           />
         </div>
       ))}
