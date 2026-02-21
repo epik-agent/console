@@ -170,7 +170,9 @@ describe('github', () => {
     })
 
     it('calls gh api with the correct endpoint', async () => {
-      const exec = vi.fn<(args: string[]) => Promise<string>>().mockResolvedValue(JSON.stringify([]))
+      const exec = vi
+        .fn<(args: string[]) => Promise<string>>()
+        .mockResolvedValue(JSON.stringify([]))
       await loadIssueGraph('myorg', 'myrepo', exec)
       const [args] = exec.mock.calls[0]
       expect(args).toContain('/repos/myorg/myrepo/issues')
