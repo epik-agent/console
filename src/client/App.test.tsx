@@ -1,5 +1,6 @@
 import React from 'react'
 import { render, screen, act } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import App from './App'
 import { themes } from './theme'
@@ -52,7 +53,7 @@ describe('App', () => {
   })
 
   it('calls /api/start when Start button is clicked after setting a repo', async () => {
-    const user = (await import('@testing-library/user-event')).default.setup()
+    const user = userEvent.setup()
     const { getByRole, getByPlaceholderText } = render(<App />)
 
     // Set a repo via the input form
@@ -87,7 +88,7 @@ describe('App', () => {
   it('handles fetch error for issues gracefully (sets empty graph)', async () => {
     mockFetch.mockRejectedValueOnce(new Error('Network error'))
 
-    const user = (await import('@testing-library/user-event')).default.setup()
+    const user = userEvent.setup()
     const { getByRole, getByPlaceholderText } = render(<App />)
 
     const input = getByPlaceholderText(/owner\/repo/i)
@@ -101,7 +102,7 @@ describe('App', () => {
   })
 
   it('does not fetch when the repo input is empty and Load is clicked', async () => {
-    const user = (await import('@testing-library/user-event')).default.setup()
+    const user = userEvent.setup()
     const { getByRole, getByPlaceholderText } = render(<App />)
 
     // Clear the repo input to empty
@@ -127,7 +128,7 @@ describe('App', () => {
       }),
     )
 
-    const user = (await import('@testing-library/user-event')).default.setup()
+    const user = userEvent.setup()
     const { getByRole, getByPlaceholderText, unmount } = render(<App />)
 
     const input = getByPlaceholderText(/owner\/repo/i)
@@ -209,7 +210,7 @@ describe('App', () => {
     })
 
     it('shows moon icon (🌙) after toggling to light mode', async () => {
-      const user = (await import('@testing-library/user-event')).default.setup()
+      const user = userEvent.setup()
       render(<App />)
       const btn = screen.getByRole('button', { name: /switch to light mode/i })
       await user.click(btn)
@@ -217,7 +218,7 @@ describe('App', () => {
     })
 
     it('aria-label flips between modes on toggle', async () => {
-      const user = (await import('@testing-library/user-event')).default.setup()
+      const user = userEvent.setup()
       render(<App />)
       const btn = screen.getByRole('button', { name: /switch to light mode/i })
       await user.click(btn)
@@ -225,7 +226,7 @@ describe('App', () => {
     })
 
     it('toolbar background changes to light bar color after toggle', async () => {
-      const user = (await import('@testing-library/user-event')).default.setup()
+      const user = userEvent.setup()
       const { container } = render(<App />)
       const btn = screen.getByRole('button', { name: /switch to light mode/i })
       await user.click(btn)
@@ -234,7 +235,7 @@ describe('App', () => {
     })
 
     it('root background changes to light root color after toggle', async () => {
-      const user = (await import('@testing-library/user-event')).default.setup()
+      const user = userEvent.setup()
       const { container } = render(<App />)
       const btn = screen.getByRole('button', { name: /switch to light mode/i })
       await user.click(btn)
@@ -243,7 +244,7 @@ describe('App', () => {
     })
 
     it('writes theme to localStorage after toggle', async () => {
-      const user = (await import('@testing-library/user-event')).default.setup()
+      const user = userEvent.setup()
       render(<App />)
       const btn = screen.getByRole('button', { name: /switch to light mode/i })
       await user.click(btn)
@@ -293,7 +294,7 @@ describe('App', () => {
       }),
     )
 
-    const user = (await import('@testing-library/user-event')).default.setup()
+    const user = userEvent.setup()
     const { getByRole, getByPlaceholderText, unmount } = render(<App />)
 
     const input = getByPlaceholderText(/owner\/repo/i)
