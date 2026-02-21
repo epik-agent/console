@@ -199,14 +199,52 @@ Open `http://localhost:5173/?repo=owner/repo`.
 
 ### Scripts
 
-| Script           | Description                          |
-| ---------------- | ------------------------------------ |
-| `npm run dev`    | Vite + Express server (concurrently) |
-| `npm run server` | Express server only (tsx watch)      |
-| `npm run build`  | TypeScript + Vite production build   |
-| `npm run lint`   | ESLint                               |
-| `npm run format` | Prettier                             |
-| `npm test`       | Vitest                               |
+| Script                 | Description                                       |
+| ---------------------- | ------------------------------------------------- |
+| `npm run dev`          | Vite dev server + Express via tsx (hot reload)    |
+| `npm run server`       | Express server only (tsx watch)                   |
+| `npm run build`        | Type-check + Vite frontend bundle + server bundle |
+| `npm run build:server` | esbuild server bundle only → `dist/server.js`     |
+| `npm run lint`         | ESLint                                            |
+| `npm run format`       | Prettier                                          |
+| `npm test`             | Vitest                                            |
+
+### Build modes
+
+**Development** (`npm run dev`): Vite serves the frontend with HMR on `:5173`.
+The Express server runs from TypeScript source via `tsx watch` on `:3001`.
+
+**Production** (`npm run build`): three sequential steps:
+1. `tsc -b` — type-checks the whole project (no output files)
+2. `vite build` — bundles the React frontend into `dist/`
+3. `esbuild` — bundles the Express server into `dist/server.js`, leaving
+   runtime dependencies (`express`, `ws`, `nats`, `@anthropic-ai/claude-agent-sdk`)
+   as externals resolved from `node_modules`
+
+**Docker** (`docker compose up --build`): runs the production build in a builder
+stage, then copies only `dist/` into a lean production image. `.dockerignore`
+excludes the host `node_modules` so the container always installs fresh
+Linux-compatible binaries. Layer caching means `npm ci` and `gh` installation
+only re-run when `package-lock.json` changes.
+
+### Static file serving
+
+In Docker the Express server serves the Vite frontend from `dist/` using the
+`SERVE_STATIC` environment variable (set to `"1"` by the Dockerfile):
+
+```ts
+if (process.env['SERVE_STATIC']) {
+  const distDir = resolve(fileURLToPath(import.meta.url), '..')
+  app.use(express.static(distDir))
+}
+```
+
+At runtime `import.meta.url` is `dist/server.js`, so `resolve(..., '..')` is
+the `dist/` directory where Vite wrote `index.html` and `assets/`.
+
+`SERVE_STATIC` is never set in development or tests. In tests this ensures the
+static middleware is not registered regardless of whether a `dist/` directory
+exists locally, preventing any test-ordering sensitivity to local build state.
 
 ## Reuse from Epik
 

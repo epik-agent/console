@@ -41,9 +41,8 @@ app.use(express.json())
 // Vite dev server handles the frontend separately.
 // ---------------------------------------------------------------------------
 
-const distDir = resolve(fileURLToPath(import.meta.url), '../../../dist')
-
-if (existsSync(distDir)) {
+if (process.env['SERVE_STATIC']) {
+  const distDir = resolve(fileURLToPath(import.meta.url), '..')
   app.use(express.static(distDir))
 }
 

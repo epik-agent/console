@@ -45,6 +45,7 @@ COPY --from=builder /app/dist ./dist
 
 # Optional GitHub token — the app starts without it but repo loading will
 # return a clear error if it is absent.
+ENV SERVE_STATIC="1"
 ENV GH_TOKEN=""
 
 # NATS server URL — overridden by docker-compose to point at the nats service
