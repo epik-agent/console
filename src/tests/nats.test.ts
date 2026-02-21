@@ -14,6 +14,12 @@ function makeMockConn(closed = false) {
   }
 }
 
+/** Register a nats mock with the given connect fn and dynamically import nats.ts. */
+async function makeNatsModule(mockConnect: ReturnType<typeof vi.fn>) {
+  vi.doMock('nats', () => ({ connect: mockConnect }))
+  return import('../server/nats.ts')
+}
+
 describe('nats module (unit)', () => {
   beforeEach(() => {
     vi.resetModules()
@@ -21,10 +27,8 @@ describe('nats module (unit)', () => {
 
   it('exports all topic constants', async () => {
     const mockConn = makeMockConn()
-    vi.doMock('nats', () => ({ connect: vi.fn(async () => mockConn) }))
-
     const { TOPIC_SUPERVISOR, TOPIC_WORKER_0, TOPIC_WORKER_1, TOPIC_WORKER_2, TOPIC_LOG } =
-      await import('../server/nats.ts')
+      await makeNatsModule(vi.fn(async () => mockConn))
 
     expect(TOPIC_SUPERVISOR).toBe('epik.supervisor')
     expect(TOPIC_WORKER_0).toBe('epik.worker.0')
@@ -36,9 +40,8 @@ describe('nats module (unit)', () => {
   it('getNatsConnection() creates and returns a connection', async () => {
     const mockConn = makeMockConn()
     const mockConnect = vi.fn(async () => mockConn)
-    vi.doMock('nats', () => ({ connect: mockConnect }))
+    const { getNatsConnection } = await makeNatsModule(mockConnect)
 
-    const { getNatsConnection } = await import('../server/nats.ts')
     const conn = await getNatsConnection()
 
     expect(mockConnect).toHaveBeenCalledOnce()
@@ -48,9 +51,8 @@ describe('nats module (unit)', () => {
   it('getNatsConnection() reuses the same connection on repeated calls', async () => {
     const mockConn = makeMockConn()
     const mockConnect = vi.fn(async () => mockConn)
-    vi.doMock('nats', () => ({ connect: mockConnect }))
+    const { getNatsConnection } = await makeNatsModule(mockConnect)
 
-    const { getNatsConnection } = await import('../server/nats.ts')
     const first = await getNatsConnection()
     const second = await getNatsConnection()
 
@@ -62,9 +64,7 @@ describe('nats module (unit)', () => {
     const closedConn = makeMockConn(true)
     const freshConn = makeMockConn(false)
     const mockConnect = vi.fn().mockResolvedValueOnce(closedConn).mockResolvedValueOnce(freshConn)
-    vi.doMock('nats', () => ({ connect: mockConnect }))
-
-    const { getNatsConnection } = await import('../server/nats.ts')
+    const { getNatsConnection } = await makeNatsModule(mockConnect)
 
     // First call — returns closedConn
     const first = await getNatsConnection()
@@ -81,9 +81,9 @@ describe('nats module (unit)', () => {
 
   it('closeNatsConnection() drains and nulls the connection', async () => {
     const mockConn = makeMockConn()
-    vi.doMock('nats', () => ({ connect: vi.fn(async () => mockConn) }))
-
-    const { getNatsConnection, closeNatsConnection } = await import('../server/nats.ts')
+    const { getNatsConnection, closeNatsConnection } = await makeNatsModule(
+      vi.fn(async () => mockConn),
+    )
 
     await getNatsConnection()
     await closeNatsConnection()
@@ -96,9 +96,7 @@ describe('nats module (unit)', () => {
 
   it('closeNatsConnection() is a no-op when no connection is open', async () => {
     const mockConnect = vi.fn()
-    vi.doMock('nats', () => ({ connect: mockConnect }))
-
-    const { closeNatsConnection } = await import('../server/nats.ts')
+    const { closeNatsConnection } = await makeNatsModule(mockConnect)
 
     // Should not throw
     await expect(closeNatsConnection()).resolves.toBeUndefined()
@@ -107,9 +105,9 @@ describe('nats module (unit)', () => {
 
   it('closeNatsConnection() is a no-op when connection is already closed', async () => {
     const mockConn = makeMockConn()
-    vi.doMock('nats', () => ({ connect: vi.fn(async () => mockConn) }))
-
-    const { getNatsConnection, closeNatsConnection } = await import('../server/nats.ts')
+    const { getNatsConnection, closeNatsConnection } = await makeNatsModule(
+      vi.fn(async () => mockConn),
+    )
     await getNatsConnection()
 
     // Mark connection as already closed
@@ -122,13 +120,12 @@ describe('nats module (unit)', () => {
   it('uses NATS_URL env variable when set', async () => {
     const mockConn = makeMockConn()
     const mockConnect = vi.fn(async () => mockConn)
-    vi.doMock('nats', () => ({ connect: mockConnect }))
 
     const originalUrl = process.env['NATS_URL']
     process.env['NATS_URL'] = 'nats://custom-host:5222'
 
     try {
-      const { getNatsConnection } = await import('../server/nats.ts')
+      const { getNatsConnection } = await makeNatsModule(mockConnect)
       await getNatsConnection()
 
       expect(mockConnect).toHaveBeenCalledWith({ servers: 'nats://custom-host:5222' })
@@ -144,13 +141,12 @@ describe('nats module (unit)', () => {
   it('defaults to nats://localhost:4222 when NATS_URL is not set', async () => {
     const mockConn = makeMockConn()
     const mockConnect = vi.fn(async () => mockConn)
-    vi.doMock('nats', () => ({ connect: mockConnect }))
 
     const originalUrl = process.env['NATS_URL']
     delete process.env['NATS_URL']
 
     try {
-      const { getNatsConnection } = await import('../server/nats.ts')
+      const { getNatsConnection } = await makeNatsModule(mockConnect)
       await getNatsConnection()
 
       expect(mockConnect).toHaveBeenCalledWith({ servers: 'nats://localhost:4222' })
@@ -165,9 +161,7 @@ describe('nats module (unit)', () => {
     const mockConn = makeMockConn()
     const mockConn2 = makeMockConn()
     const mockConnect = vi.fn().mockResolvedValueOnce(mockConn).mockResolvedValueOnce(mockConn2)
-    vi.doMock('nats', () => ({ connect: mockConnect }))
-
-    const { getNatsConnection, closeNatsConnection } = await import('../server/nats.ts')
+    const { getNatsConnection, closeNatsConnection } = await makeNatsModule(mockConnect)
 
     const first = await getNatsConnection()
     expect(first).toBe(mockConn)
@@ -183,15 +177,13 @@ describe('nats module (unit)', () => {
 
   it('SIGINT handler closes the connection and calls process.exit', async () => {
     const mockConn = makeMockConn()
-    vi.doMock('nats', () => ({ connect: vi.fn(async () => mockConn) }))
+    const { getNatsConnection } = await makeNatsModule(vi.fn(async () => mockConn))
+    await getNatsConnection()
 
     // Spy on process.exit to prevent the test process from actually exiting.
     // We use a no-op instead of throwing so the async handler doesn't
     // produce an unhandled rejection.
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {}) as never)
-
-    const { getNatsConnection } = await import('../server/nats.ts')
-    await getNatsConnection()
 
     process.emit('SIGINT', 'SIGINT')
 

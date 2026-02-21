@@ -11,6 +11,7 @@
  * - Static files served from `dist/` in production
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { readProjectFile } from './test-fixtures.ts'
 
 // ---------------------------------------------------------------------------
 // NATS URL configuration
@@ -153,101 +154,31 @@ describe('server — PORT env var', () => {
 // ---------------------------------------------------------------------------
 
 describe('docker configuration files', () => {
-  it('Dockerfile exists at the project root', async () => {
-    const { readFileSync } = await import('fs')
-    const { resolve } = await import('path')
-    const { fileURLToPath } = await import('url')
-
-    const dir = resolve(fileURLToPath(import.meta.url), '../../..')
-    let content: string
-    try {
-      content = readFileSync(resolve(dir, 'Dockerfile'), 'utf-8')
-    } catch {
-      content = ''
-    }
-
+  it('Dockerfile exists at the project root', () => {
+    const content = readProjectFile('Dockerfile')
     expect(content).toBeTruthy()
     expect(content).toContain('FROM')
   })
 
-  it('docker-compose.yml exists at the project root', async () => {
-    const { readFileSync } = await import('fs')
-    const { resolve } = await import('path')
-    const { fileURLToPath } = await import('url')
-
-    const dir = resolve(fileURLToPath(import.meta.url), '../../..')
-    let content: string
-    try {
-      content = readFileSync(resolve(dir, 'docker-compose.yml'), 'utf-8')
-    } catch {
-      content = ''
-    }
-
+  it('docker-compose.yml exists at the project root', () => {
+    const content = readProjectFile('docker-compose.yml')
     expect(content).toBeTruthy()
     expect(content).toContain('nats')
   })
 
-  it('docker-compose.yml exposes port 5173', async () => {
-    const { readFileSync } = await import('fs')
-    const { resolve } = await import('path')
-    const { fileURLToPath } = await import('url')
-
-    const dir = resolve(fileURLToPath(import.meta.url), '../../..')
-    let content: string
-    try {
-      content = readFileSync(resolve(dir, 'docker-compose.yml'), 'utf-8')
-    } catch {
-      content = ''
-    }
-
-    expect(content).toContain('5173')
+  it('docker-compose.yml exposes port 5173', () => {
+    expect(readProjectFile('docker-compose.yml')).toContain('5173')
   })
 
-  it('Dockerfile contains npm run build step', async () => {
-    const { readFileSync } = await import('fs')
-    const { resolve } = await import('path')
-    const { fileURLToPath } = await import('url')
-
-    const dir = resolve(fileURLToPath(import.meta.url), '../../..')
-    let content: string
-    try {
-      content = readFileSync(resolve(dir, 'Dockerfile'), 'utf-8')
-    } catch {
-      content = ''
-    }
-
-    expect(content).toContain('npm run build')
+  it('Dockerfile contains npm run build step', () => {
+    expect(readProjectFile('Dockerfile')).toContain('npm run build')
   })
 
-  it('Dockerfile references GH_TOKEN', async () => {
-    const { readFileSync } = await import('fs')
-    const { resolve } = await import('path')
-    const { fileURLToPath } = await import('url')
-
-    const dir = resolve(fileURLToPath(import.meta.url), '../../..')
-    let content: string
-    try {
-      content = readFileSync(resolve(dir, 'Dockerfile'), 'utf-8')
-    } catch {
-      content = ''
-    }
-
-    expect(content).toContain('GH_TOKEN')
+  it('Dockerfile references GH_TOKEN', () => {
+    expect(readProjectFile('Dockerfile')).toContain('GH_TOKEN')
   })
 
-  it('README.md contains docker compose up instructions', async () => {
-    const { readFileSync } = await import('fs')
-    const { resolve } = await import('path')
-    const { fileURLToPath } = await import('url')
-
-    const dir = resolve(fileURLToPath(import.meta.url), '../../..')
-    let content: string
-    try {
-      content = readFileSync(resolve(dir, 'README.md'), 'utf-8')
-    } catch {
-      content = ''
-    }
-
-    expect(content).toContain('docker compose up')
+  it('README.md contains docker compose up instructions', () => {
+    expect(readProjectFile('README.md')).toContain('docker compose up')
   })
 })

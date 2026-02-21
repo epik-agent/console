@@ -1,6 +1,28 @@
+import { readFileSync } from 'fs'
+import { resolve } from 'path'
+import { fileURLToPath } from 'url'
 import { vi } from 'vitest'
 import type { AgentEvent } from '../client/types.ts'
 import type { RunAgentOptions } from '../server/runner.ts'
+
+// ---------------------------------------------------------------------------
+// General helpers
+// ---------------------------------------------------------------------------
+
+/** Resolve a path relative to the project root and read its contents, or return '' on error. */
+const projectRoot = resolve(fileURLToPath(import.meta.url), '../../..')
+export function readProjectFile(filename: string): string {
+  try {
+    return readFileSync(resolve(projectRoot, filename), 'utf-8')
+  } catch {
+    return ''
+  }
+}
+
+/** Pause for `ms` milliseconds (lets async event-loop callbacks run). */
+export function tick(ms = 10): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms))
+}
 
 // ---------------------------------------------------------------------------
 // SDK iterator helpers
