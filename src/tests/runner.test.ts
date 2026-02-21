@@ -25,6 +25,12 @@ function makeIterator(messages: unknown[]): AsyncIterable<unknown> & { interrupt
   return iter
 }
 
+/** No-op mock for createSdkMcpServer and tool used in all vi.doMock calls. */
+const sdkMockBase = {
+  createSdkMcpServer: () => ({ type: 'sdk', name: 'nats', instance: {} }),
+  tool: () => ({}),
+}
+
 /** Collect all events sent via the `send` callback into an array. */
 async function collect(
   messages: unknown[],
@@ -42,6 +48,7 @@ async function collect(
 
   // Mock the claude-agent-sdk query function
   vi.doMock('@anthropic-ai/claude-agent-sdk', () => ({
+    ...sdkMockBase,
     query: () => makeIterator(messages),
   }))
 
@@ -153,6 +160,7 @@ describe('runAgent', () => {
     const { runAgent } = await import('../server/runner.ts')
 
     vi.doMock('@anthropic-ai/claude-agent-sdk', () => ({
+      ...sdkMockBase,
       query: () => makeIterator([{ type: 'system', subtype: 'init', session_id: 'sess-abc-123' }]),
     }))
 
@@ -230,6 +238,7 @@ describe('nats_publish interception', () => {
     ]
 
     vi.doMock('@anthropic-ai/claude-agent-sdk', () => ({
+      ...sdkMockBase,
       query: () => makeIterator(messages),
     }))
 
@@ -269,6 +278,7 @@ describe('nats_publish interception', () => {
     ]
 
     vi.doMock('@anthropic-ai/claude-agent-sdk', () => ({
+      ...sdkMockBase,
       query: () => makeIterator(messages),
     }))
 
@@ -307,6 +317,7 @@ describe('nats_publish interception', () => {
     ]
 
     vi.doMock('@anthropic-ai/claude-agent-sdk', () => ({
+      ...sdkMockBase,
       query: () => makeIterator(messages),
     }))
 
@@ -330,6 +341,7 @@ describe('nats_publish interception', () => {
 
     let capturedOptions: unknown = null
     vi.doMock('@anthropic-ai/claude-agent-sdk', () => ({
+      ...sdkMockBase,
       query: (opts: unknown) => {
         capturedOptions = opts
         return makeIterator([])
@@ -345,9 +357,7 @@ describe('nats_publish interception', () => {
       natsClient: { publish: vi.fn() } as unknown as import('nats').NatsConnection,
     })
 
-    const opts = capturedOptions as { options?: { customTools?: Array<{ name: string }> } }
-    const customTools = opts?.options?.customTools ?? []
-    const natsPublishTool = customTools.find((t) => t.name === 'nats_publish')
-    expect(natsPublishTool).toBeDefined()
+    const opts = capturedOptions as { options?: { mcpServers?: Record<string, unknown> } }
+    expect(opts?.options?.mcpServers?.['nats']).toBeDefined()
   })
 })

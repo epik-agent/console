@@ -9,7 +9,8 @@
  * The module installs a `SIGINT` handler that drains the connection before
  * the process exits, ensuring in-flight messages are not dropped.
  */
-import { connect, NatsConnection } from 'nats'
+import { connect } from 'nats'
+import type { NatsConnection } from 'nats'
 
 /** NATS topic for messages addressed to the Supervisor agent. */
 export const TOPIC_SUPERVISOR = 'epik.supervisor'

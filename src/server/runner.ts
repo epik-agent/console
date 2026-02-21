@@ -11,20 +11,6 @@ function githubToken(): string | undefined {
   }
 }
 
-/** The `nats_publish` custom tool definition injected into every agent turn. */
-const NATS_PUBLISH_TOOL = {
-  name: 'nats_publish',
-  description: 'Publish a message to a NATS topic',
-  input_schema: {
-    type: 'object',
-    properties: {
-      topic: { type: 'string' },
-      message: { type: 'string' },
-    },
-    required: ['topic', 'message'],
-  },
-}
-
 /** Options for a single {@link runAgent} call. */
 export interface RunAgentOptions {
   /** Agent model and environment configuration. */
@@ -63,8 +49,24 @@ export interface RunAgentOptions {
  * never reaches Claude Code's built-in tool dispatcher.
  */
 export async function runAgent(opts: RunAgentOptions): Promise<{ interrupt?: () => void }> {
-  const { query } = await import('@anthropic-ai/claude-agent-sdk')
+  const { query, createSdkMcpServer, tool } = await import('@anthropic-ai/claude-agent-sdk')
+  const { z } = await import('zod')
   const token = githubToken()
+
+  // Register nats_publish as an in-process MCP tool. The handler is a no-op
+  // because the runner intercepts the tool_use event in the assistant message
+  // before MCP execution and publishes via NATS directly.
+  const natsMcpServer = createSdkMcpServer({
+    name: 'nats',
+    tools: [
+      tool(
+        'nats_publish',
+        'Publish a message to a NATS topic',
+        { topic: z.string(), message: z.string() },
+        async () => ({ content: [{ type: 'text' as const, text: 'published' }] }),
+      ),
+    ],
+  })
 
   const messages = query({
     prompt: opts.prompt,
@@ -72,54 +74,53 @@ export async function runAgent(opts: RunAgentOptions): Promise<{ interrupt?: () 
       resume: opts.sessionId,
       ...(opts.config.systemPrompt ? { systemPrompt: opts.config.systemPrompt } : {}),
       allowedTools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep', 'mcp__github__*'],
-      customTools: [NATS_PUBLISH_TOOL],
       cwd: opts.config.cwd,
       model: opts.config.model,
       includePartialMessages: true,
       permissionMode: 'bypassPermissions',
       allowDangerouslySkipPermissions: true,
-      ...(token
-        ? {
-            mcpServers: {
+      mcpServers: {
+        nats: natsMcpServer,
+        ...(token
+          ? {
               github: {
                 command: 'github-mcp-server',
                 args: ['stdio'],
                 env: { GITHUB_PERSONAL_ACCESS_TOKEN: token },
               },
-            },
-          }
-        : {}),
+            }
+          : {}),
+      },
     },
   })
 
   // Expose the interrupt handle immediately after the query is created, before
   // the event loop starts. This allows callers to cancel mid-turn.
-  const messagesWithInterrupt = messages as { interrupt?: () => void }
-  if (opts.onInterruptReady && messagesWithInterrupt.interrupt) {
-    opts.onInterruptReady(messagesWithInterrupt.interrupt)
+  if (opts.onInterruptReady) {
+    opts.onInterruptReady(() => {
+      void messages.interrupt()
+    })
   }
 
-  for await (const msg of messages as AsyncIterable<unknown>) {
-    const m = msg as { type: string; subtype?: string; is_error?: boolean }
-
-    if (m.type === 'system' && m.subtype === 'init') {
-      opts.onSessionId((m as { session_id: string }).session_id)
+  for await (const msg of messages) {
+    if (msg.type === 'system' && msg.subtype === 'init') {
+      opts.onSessionId(msg.session_id)
       continue
     }
 
-    if (m.type === 'stream_event') {
-      const evt = (m as { event: { type: string; delta?: { type: string; text: string } } }).event
-      if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') {
+    if (msg.type === 'stream_event') {
+      const evt = msg.event
+      if (
+        evt.type === 'content_block_delta' &&
+        evt.delta.type === 'text_delta'
+      ) {
         opts.send({ kind: 'text_delta', text: evt.delta.text })
       }
       continue
     }
 
-    if (m.type === 'assistant') {
-      const blocks = (
-        m as { message: { content: Array<{ type: string; name: string; input: unknown }> } }
-      ).message.content
-      for (const block of blocks) {
+    if (msg.type === 'assistant') {
+      for (const block of msg.message.content) {
         if (block.type === 'tool_use') {
           if (block.name === 'nats_publish') {
             // Intercept: publish via NATS, do not forward to Claude Code's tool dispatcher
@@ -133,9 +134,8 @@ export async function runAgent(opts: RunAgentOptions): Promise<{ interrupt?: () 
       continue
     }
 
-    if (m.type === 'user') {
-      const blocks = (m as { message: { content: Array<unknown> } }).message.content
-      for (const block of blocks) {
+    if (msg.type === 'user') {
+      for (const block of msg.message.content) {
         if (
           typeof block === 'object' &&
           block !== null &&
@@ -159,15 +159,15 @@ export async function runAgent(opts: RunAgentOptions): Promise<{ interrupt?: () 
       continue
     }
 
-    if (m.type === 'result' && m.subtype !== 'success' && m.is_error) {
+    if (msg.type === 'result' && msg.subtype !== 'success' && msg.is_error) {
       opts.send({
         kind: 'error',
-        message: (m as { errors?: string[] }).errors?.join('\n') ?? 'Unknown error',
+        message: (msg as { errors?: string[] }).errors?.join('\n') ?? 'Unknown error',
       })
     }
   }
 
   opts.send({ kind: 'turn_end' })
 
-  return messages as { interrupt?: () => void }
+  return { interrupt: () => { void messages.interrupt() } }
 }
