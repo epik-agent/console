@@ -1,5 +1,6 @@
 import { vi } from 'vitest'
 import type { AgentEvent } from '../client/types.ts'
+import type { RunAgentOptions } from '../server/runner.ts'
 
 // ---------------------------------------------------------------------------
 // SDK iterator helpers
@@ -36,20 +37,10 @@ export const sdkMockBase: Record<string, (...args: unknown[]) => unknown> = {
 // runAgent helpers
 // ---------------------------------------------------------------------------
 
-export type RunAgentOpts = {
-  config: { model: string; cwd: string; systemPrompt: string | undefined }
-  sessionId: string | undefined
-  prompt: string
-  send: (event: AgentEvent) => void
-  onSessionId: (id: string) => void
-  onInterruptReady?: (interrupt: () => void) => void
-  natsClient: unknown
-}
-
 /** Default runAgent options — override only what each test needs. */
 export function makeRunAgentOpts(
-  overrides: Partial<RunAgentOpts> = {},
-): RunAgentOpts {
+  overrides: Partial<RunAgentOptions> = {},
+): RunAgentOptions {
   return {
     config: { model: 'claude-sonnet-4-6', cwd: '/tmp', systemPrompt: undefined },
     sessionId: undefined,
