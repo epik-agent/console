@@ -81,8 +81,13 @@ describe('github module — GH_TOKEN handling', () => {
         ),
       )
 
-    // The loadIssueGraph should propagate an error with a useful message
-    await expect(loadIssueGraph('owner', 'repo', execNoToken)).rejects.toThrow()
+    let threw = false
+    try {
+      await loadIssueGraph('owner', 'repo', execNoToken)
+    } catch {
+      threw = true
+    }
+    expect(threw).toBe(true)
   })
 
   it('loadIssueGraph raises an error that mentions GitHub token when gh CLI rejects with auth error', async () => {
