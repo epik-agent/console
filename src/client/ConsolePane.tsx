@@ -13,6 +13,11 @@ import type { Palette } from './theme'
 // Sub-components
 // ---------------------------------------------------------------------------
 
+/**
+ * Right-aligned bubble displaying a user-submitted message.
+ *
+ * @param text - Plain-text message body.
+ */
 function UserBubble({ text }: { text: string }) {
   return (
     <div style={bubbleWrapperStyle}>
@@ -32,6 +37,12 @@ const userBubbleStyle: React.CSSProperties = {
   lineHeight: 1.5,
 }
 
+/**
+ * Renders a text block from the assistant using GitHub-Flavored Markdown with
+ * syntax highlighting via `highlight.js`.
+ *
+ * @param text - Markdown string to render.
+ */
 function AssistantTextBlock({ text }: { text: string }) {
   return (
     <div style={assistantTextStyle}>
@@ -55,6 +66,16 @@ function AssistantTextBlock({ text }: { text: string }) {
 
 const assistantTextStyle: React.CSSProperties = { lineHeight: 1.6, fontSize: '15px' }
 
+/**
+ * Collapsible card displaying a tool invocation (name + formatted input).
+ *
+ * Bash commands are shown as the raw `command` string; all other tools display
+ * their input as pretty-printed JSON. The card is collapsed by default.
+ *
+ * @param name    - Tool name (e.g. `"Bash"`, `"Read"`).
+ * @param input   - Tool input payload as received from the agent.
+ * @param palette - Active colour palette for theming.
+ */
 export function ToolUseCard({
   name,
   input,
@@ -85,6 +106,15 @@ export function ToolUseCard({
   )
 }
 
+/**
+ * Collapsible card displaying a tool result.
+ *
+ * Content longer than 2 000 characters is truncated with an ellipsis. The
+ * card is collapsed by default.
+ *
+ * @param content - Raw tool result content (string or structured value).
+ * @param palette - Active colour palette for theming.
+ */
 export function ToolResultCard({ content, palette }: { content: unknown; palette: Palette }) {
   const s = makeToolStyles(palette)
   const [collapsed, setCollapsed] = React.useState(true)
@@ -106,6 +136,12 @@ export function ToolResultCard({ content, palette }: { content: unknown; palette
   )
 }
 
+/**
+ * Horizontal rule inserted into the chat history when the SDK compacts the
+ * context window, so the user can see where earlier conversation was summarised.
+ *
+ * @param palette - Active colour palette for theming.
+ */
 function CompactionMarker({ palette }: { palette: Palette }) {
   return (
     <div
@@ -126,6 +162,15 @@ function CompactionMarker({ palette }: { palette: Palette }) {
   )
 }
 
+/**
+ * Renders an ordered list of {@link Block}s from a single assistant message.
+ *
+ * Memoised so that the expensive Markdown render only re-runs when the block
+ * array or palette reference changes.
+ *
+ * @param blocks  - Content blocks for the assistant message.
+ * @param palette - Active colour palette for theming.
+ */
 const AssistantBlocks = memo(function AssistantBlocks({
   blocks,
   palette,
@@ -158,13 +203,35 @@ const assistantWrapperStyle: React.CSSProperties = {
 // ConsolePane
 // ---------------------------------------------------------------------------
 
+/** Props for the {@link ConsolePane} component. */
 interface ConsolePaneProps {
+  /** Identity of the agent this pane is displaying. */
   agentId: AgentId
+  /**
+   * Ordered list of events received for this agent.
+   *
+   * New events are appended by the parent — the pane processes only the slice
+   * it hasn't seen yet on each render.
+   */
   events: AgentEvent[]
+  /**
+   * Called when the user submits a message (Enter key or Send button).
+   *
+   * @param text - Trimmed message body.
+   */
   onSend: (text: string) => void
+  /** Called when the user presses Escape to interrupt an in-progress turn. */
   onInterrupt: () => void
 }
 
+/**
+ * Chat pane for a single agent.
+ *
+ * Maintains its own {@link ChatState} via `useReducer`. Incoming `events` are
+ * diffed against a processed-count ref so that only new events are dispatched.
+ * `inject` events are treated as user messages and trigger a send automatically.
+ * Pressing Escape while the agent is busy fires `onInterrupt`.
+ */
 export default function ConsolePane(props: ConsolePaneProps) {
   const { events, onSend, onInterrupt } = props
   const palette = themes['dark']
@@ -283,6 +350,11 @@ export default function ConsolePane(props: ConsolePaneProps) {
 // Styles
 // ---------------------------------------------------------------------------
 
+/**
+ * Returns the style map for the main pane layout, derived from `p`.
+ *
+ * @param p - Active colour palette.
+ */
 function makeStyles(p: Palette): Record<string, React.CSSProperties> {
   return {
     pane: { display: 'flex', flexDirection: 'column', height: '100%', background: p.bg.root },
@@ -320,6 +392,11 @@ function makeStyles(p: Palette): Record<string, React.CSSProperties> {
   }
 }
 
+/**
+ * Returns the style map for tool-use and tool-result cards, derived from `p`.
+ *
+ * @param p - Active colour palette.
+ */
 function makeToolStyles(p: Palette): Record<string, React.CSSProperties> {
   return {
     toolCard: {

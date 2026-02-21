@@ -8,17 +8,34 @@ import type { IssueGraph as IssueGraphType } from './types'
 // Helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * Reads the `repo` query-string parameter from the current URL.
+ *
+ * @returns The raw `owner/repo` string, or an empty string if absent.
+ */
 function repoFromUrl(): string {
   const params = new URLSearchParams(window.location.search)
   return params.get('repo') ?? ''
 }
 
+/** Sentinel empty graph used before the first successful `/api/issues` fetch. */
 const EMPTY_GRAPH: IssueGraphType = { nodes: [] }
 
 // ---------------------------------------------------------------------------
 // App
 // ---------------------------------------------------------------------------
 
+/**
+ * Root application component.
+ *
+ * Renders a toolbar with a repository input and a **Start** button, an
+ * {@link IssueGraph} occupying the top half of the viewport, and
+ * {@link AgentTabs} occupying the bottom half.
+ *
+ * On mount it reads `?repo=owner/repo` from the URL and fetches the issue
+ * graph immediately. The **Start** button triggers `POST /api/start` to kick
+ * off the Supervisor agent.
+ */
 export default function App() {
   const { events, pool, sendMessage, interrupt } = useAgentEvents()
   const [repo, setRepo] = useState<string>(repoFromUrl)

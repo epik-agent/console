@@ -6,10 +6,24 @@ import type { AgentEvent, AgentId, PoolState, WorkerState } from './types'
 // Types
 // ---------------------------------------------------------------------------
 
+/** Props for the {@link AgentTabs} component. */
 interface AgentTabsProps {
+  /** Current pool state snapshot — drives the status badge on each tab. */
   pool: PoolState
+  /** Per-agent event lists, forwarded to each {@link ConsolePane}. */
   events: Record<AgentId, AgentEvent[]>
+  /**
+   * Called when the user submits a message in a pane.
+   *
+   * @param agentId - Agent whose pane generated the message.
+   * @param text    - Message body.
+   */
   onSend: (agentId: AgentId, text: string) => void
+  /**
+   * Called when the user presses Escape to interrupt an in-progress turn.
+   *
+   * @param agentId - Agent whose turn should be cancelled.
+   */
   onInterrupt: (agentId: AgentId) => void
 }
 
@@ -17,14 +31,28 @@ interface AgentTabsProps {
 // Constants
 // ---------------------------------------------------------------------------
 
+/** Ordered list of agent IDs that appear as tabs, left-to-right. */
 const AGENT_IDS: AgentId[] = ['supervisor', 'worker-0', 'worker-1', 'worker-2']
 
+/**
+ * Returns the human-readable tab label for an agent.
+ *
+ * @param id - Agent identifier.
+ */
 function tabLabel(id: AgentId): string {
   if (id === 'supervisor') return 'Supervisor'
   const n = id.split('-')[1]
   return `Worker ${n}`
 }
 
+/**
+ * Returns the current status of an agent from the pool snapshot.
+ *
+ * Defaults to `'idle'` when the agent is not yet in the pool.
+ *
+ * @param pool - Pool snapshot from the server.
+ * @param id   - Agent to look up.
+ */
 function workerStatus(pool: PoolState, id: AgentId): 'idle' | 'busy' {
   const worker: WorkerState | undefined = pool.find((w) => w.id === id)
   return worker?.status ?? 'idle'
@@ -34,6 +62,11 @@ function workerStatus(pool: PoolState, id: AgentId): 'idle' | 'busy' {
 // Sub-components
 // ---------------------------------------------------------------------------
 
+/**
+ * Small pill badge showing `Idle` (grey) or `Busy` (amber) next to a tab label.
+ *
+ * @param status - Current agent status.
+ */
 function StatusBadge({ status }: { status: 'idle' | 'busy' }) {
   const isBusy = status === 'busy'
   return (
@@ -58,6 +91,13 @@ function StatusBadge({ status }: { status: 'idle' | 'busy' }) {
 // AgentTabs
 // ---------------------------------------------------------------------------
 
+/**
+ * Tabbed panel hosting one {@link ConsolePane} per agent.
+ *
+ * All tab panels are mounted simultaneously so that each agent's chat state
+ * is preserved when the user switches tabs. Inactive panels are hidden with
+ * `display: none` rather than unmounted.
+ */
 export default function AgentTabs({ pool, events, onSend, onInterrupt }: AgentTabsProps) {
   const [activeId, setActiveId] = useState<AgentId>('supervisor')
 

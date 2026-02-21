@@ -1,3 +1,13 @@
+/**
+ * Express + WebSocket server entrypoint (port 3001).
+ *
+ * Exposes the REST API described in ARCHITECTURE.md and a `/ws` WebSocket
+ * endpoint that streams {@link ServerMessage} envelopes to all connected
+ * browsers.
+ *
+ * The module also initialises the agent pool on startup and wires NATS
+ * pub/sub to agent turn execution.
+ */
 import express from 'express'
 import { WebSocketServer, WebSocket } from 'ws'
 import { createServer } from 'http'
@@ -10,18 +20,29 @@ export const app = express()
 app.use(express.json())
 
 export const server = createServer(app)
+/** WebSocket server mounted at `/ws` on the same HTTP server as the REST API. */
 export const wss = new WebSocketServer({ server, path: '/ws' })
 
 // ---------------------------------------------------------------------------
 // Agent pool initialisation
 // ---------------------------------------------------------------------------
 
+/** Promise that resolves to the fully initialised {@link AgentPool}. */
 const poolPromise = createAgentPool()
 
 // ---------------------------------------------------------------------------
 // REST endpoints
 // ---------------------------------------------------------------------------
 
+/**
+ * `GET /api/issues?repo=owner/repo`
+ *
+ * Returns the {@link IssueGraph} for the specified repository by calling
+ * {@link loadIssueGraph}.
+ *
+ * Responds with `400` if `repo` is missing or malformed, `500` on upstream
+ * errors.
+ */
 app.get('/api/issues', async (req, res) => {
   const repo = req.query['repo']
   if (typeof repo !== 'string' || !repo) {
@@ -41,11 +62,22 @@ app.get('/api/issues', async (req, res) => {
   }
 })
 
+/**
+ * `GET /api/pool`
+ *
+ * Returns a {@link PoolState} snapshot — one {@link WorkerState} per agent.
+ */
 app.get('/api/pool', async (_req, res) => {
   const pool = await poolPromise
   res.json(pool.getPool())
 })
 
+/**
+ * `POST /api/start`
+ *
+ * Publishes `"start"` to `epik.supervisor` via NATS, which triggers the
+ * Supervisor agent's first turn.
+ */
 app.post('/api/start', async (_req, res) => {
   try {
     const nc = await getNatsConnection()
@@ -56,6 +88,14 @@ app.post('/api/start', async (_req, res) => {
   }
 })
 
+/**
+ * `POST /api/message`
+ *
+ * Body: `{ agentId: AgentId, text: string }`
+ *
+ * Injects a user message into the specified agent's queue via
+ * {@link AgentPool.injectMessage}.
+ */
 app.post('/api/message', async (req, res) => {
   const { agentId, text } = req.body as { agentId?: AgentId; text?: string }
   if (!agentId || !text) {
@@ -67,6 +107,14 @@ app.post('/api/message', async (req, res) => {
   res.json({ ok: true })
 })
 
+/**
+ * `POST /api/interrupt`
+ *
+ * Body: `{ agentId: AgentId }`
+ *
+ * Cancels the in-progress turn of the specified agent via
+ * {@link AgentPool.interrupt}.
+ */
 app.post('/api/interrupt', async (req, res) => {
   const { agentId } = req.body as { agentId?: AgentId }
   if (!agentId) {
@@ -82,6 +130,14 @@ app.post('/api/interrupt', async (req, res) => {
 // WebSocket server
 // ---------------------------------------------------------------------------
 
+/**
+ * `WS /ws`
+ *
+ * On connection: immediately sends the current {@link PoolState}, then
+ * registers a pool listener that forwards every tagged {@link AgentEvent} as a
+ * {@link ServerMessage} envelope. The listener is unregistered when the
+ * WebSocket closes.
+ */
 wss.on('connection', async (ws) => {
   const pool = await poolPromise
 

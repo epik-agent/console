@@ -7,28 +7,42 @@ import type { AgentEvent, AgentId, IssueGraph as IssueGraphType } from './types'
 // Constants
 // ---------------------------------------------------------------------------
 
+/** Node fill colour for closed issues. */
 const COLOR_CLOSED = '#22c55e'
+/** Node fill colour for open issues. */
 const COLOR_OPEN = '#f59e0b'
+/** Transient fill colour during a blink animation. */
 const COLOR_BLINK = '#ffffff'
+/** How long (ms) a node blinks white when a new agent event arrives. */
 const BLINK_DURATION_MS = 500
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
+/** Internal graph node shape consumed by `react-force-graph-2d`. */
 interface IssueNode extends NodeObject {
+  /** GitHub issue number (used as the graph node ID). */
   id: number
+  /** Issue title shown as a tooltip. */
   label: string
+  /** Whether the issue is open or closed. */
   state: 'open' | 'closed'
 }
 
+/** Directed edge in the force graph — an arrow from `source` to `target`. */
 interface IssueLink {
+  /** Issue number of the blocker (dependency). */
   source: number
+  /** Issue number of the blocked issue (dependent). */
   target: number
 }
 
+/** Props for the {@link IssueGraph} component. */
 interface IssueGraphProps {
+  /** Issue dependency graph to visualise. */
   graph: IssueGraphType
+  /** Per-agent event streams — used to trigger blink animations. */
   events: Record<AgentId, AgentEvent[]>
   /** Maps agentId to the issue number it is currently working on. */
   agentIssueMap?: Partial<Record<AgentId, number>>
@@ -38,6 +52,16 @@ interface IssueGraphProps {
 // Component
 // ---------------------------------------------------------------------------
 
+/**
+ * Force-directed visualisation of the issue dependency graph.
+ *
+ * Nodes are coloured green (closed) or amber (open). When a new
+ * {@link AgentEvent} arrives for an agent that is mapped to an issue via
+ * `agentIssueMap`, the corresponding node briefly flashes white for
+ * {@link BLINK_DURATION_MS} milliseconds.
+ *
+ * Edges point from blocker → blocked, with arrowheads at the target.
+ */
 export default function IssueGraph({ graph, events, agentIssueMap }: IssueGraphProps) {
   const [blinkingIssues, setBlinkingIssues] = useState<Set<number>>(new Set())
 
