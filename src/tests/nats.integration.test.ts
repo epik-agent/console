@@ -36,12 +36,9 @@ describe('nats module', () => {
     const sub = nc.subscribe(TOPIC_LOG)
     const received: string[] = []
 
-    const collectPromise = (async () => {
-      for await (const msg of sub) {
-        received.push(msg.string())
-        break
-      }
-    })()
+    const collectPromise = sub[Symbol.asyncIterator]().next().then((r) => {
+      if (!r.done) received.push(r.value.string())
+    })
 
     nc.publish(TOPIC_LOG, 'hello from test')
     await collectPromise

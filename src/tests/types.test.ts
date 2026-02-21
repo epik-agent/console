@@ -28,13 +28,13 @@ describe('types', () => {
     const e5: AgentEvent = { kind: 'error', message: 'oops' }
     const e6: AgentEvent = { kind: 'inject', text: 'injected' }
     const e7: AgentEvent = { kind: 'compaction', summary: 'compact' }
-    expectTypeOf(e1).toMatchTypeOf<AgentEvent>()
-    expectTypeOf(e2).toMatchTypeOf<AgentEvent>()
-    expectTypeOf(e3).toMatchTypeOf<AgentEvent>()
-    expectTypeOf(e4).toMatchTypeOf<AgentEvent>()
-    expectTypeOf(e5).toMatchTypeOf<AgentEvent>()
-    expectTypeOf(e6).toMatchTypeOf<AgentEvent>()
-    expectTypeOf(e7).toMatchTypeOf<AgentEvent>()
+    expectTypeOf(e1).toExtend<AgentEvent>()
+    expectTypeOf(e2).toExtend<AgentEvent>()
+    expectTypeOf(e3).toExtend<AgentEvent>()
+    expectTypeOf(e4).toExtend<AgentEvent>()
+    expectTypeOf(e5).toExtend<AgentEvent>()
+    expectTypeOf(e6).toExtend<AgentEvent>()
+    expectTypeOf(e7).toExtend<AgentEvent>()
   })
 
   it('AgentId is a union of the four agent identifiers', () => {
@@ -42,24 +42,24 @@ describe('types', () => {
     const id2: AgentId = 'worker-0'
     const id3: AgentId = 'worker-1'
     const id4: AgentId = 'worker-2'
-    expectTypeOf(id1).toMatchTypeOf<AgentId>()
-    expectTypeOf(id2).toMatchTypeOf<AgentId>()
-    expectTypeOf(id3).toMatchTypeOf<AgentId>()
-    expectTypeOf(id4).toMatchTypeOf<AgentId>()
+    expectTypeOf(id1).toExtend<AgentId>()
+    expectTypeOf(id2).toExtend<AgentId>()
+    expectTypeOf(id3).toExtend<AgentId>()
+    expectTypeOf(id4).toExtend<AgentId>()
   })
 
   it('WorkerRole is a union of supervisor and worker', () => {
     const r1: WorkerRole = 'supervisor'
     const r2: WorkerRole = 'worker'
-    expectTypeOf(r1).toMatchTypeOf<WorkerRole>()
-    expectTypeOf(r2).toMatchTypeOf<WorkerRole>()
+    expectTypeOf(r1).toExtend<WorkerRole>()
+    expectTypeOf(r2).toExtend<WorkerRole>()
   })
 
   it('WorkerStatus is a union of idle and busy', () => {
     const s1: WorkerStatus = 'idle'
     const s2: WorkerStatus = 'busy'
-    expectTypeOf(s1).toMatchTypeOf<WorkerStatus>()
-    expectTypeOf(s2).toMatchTypeOf<WorkerStatus>()
+    expectTypeOf(s1).toExtend<WorkerStatus>()
+    expectTypeOf(s2).toExtend<WorkerStatus>()
   })
 
   it('WorkerState has the correct shape', () => {
@@ -69,8 +69,8 @@ describe('types', () => {
       status: 'idle',
       sessionId: undefined,
     }
-    expectTypeOf(ws).toMatchTypeOf<WorkerState>()
-    expectTypeOf(ws.sessionId).toMatchTypeOf<string | undefined>()
+    expectTypeOf(ws).toExtend<WorkerState>()
+    expectTypeOf(ws.sessionId).toExtend<string | undefined>()
   })
 
   it('PoolState is an array of WorkerState', () => {
@@ -78,7 +78,7 @@ describe('types', () => {
       { id: 'supervisor', role: 'supervisor', status: 'busy', sessionId: 'abc' },
       { id: 'worker-0', role: 'worker', status: 'idle', sessionId: undefined },
     ]
-    expectTypeOf(pool).toMatchTypeOf<PoolState>()
+    expectTypeOf(pool).toExtend<PoolState>()
   })
 
   it('IssueNode has the correct shape', () => {
@@ -90,14 +90,14 @@ describe('types', () => {
       external: false,
       blockedBy: [2, 3],
     }
-    expectTypeOf(node).toMatchTypeOf<IssueNode>()
-    expectTypeOf(node.type).toMatchTypeOf<'Feature' | 'Task' | 'Bug' | null>()
-    expectTypeOf(node.state).toMatchTypeOf<'open' | 'closed'>()
+    expectTypeOf(node).toExtend<IssueNode>()
+    expectTypeOf(node.type).toExtend<'Feature' | 'Task' | 'Bug' | null>()
+    expectTypeOf(node.state).toExtend<'open' | 'closed'>()
   })
 
   it('IssueGraph has a nodes array', () => {
     const graph: IssueGraph = { nodes: [] }
-    expectTypeOf(graph).toMatchTypeOf<IssueGraph>()
+    expectTypeOf(graph).toExtend<IssueGraph>()
   })
 
   it('ServerMessage is a discriminated union on type', () => {
@@ -107,55 +107,55 @@ describe('types', () => {
       agentId: 'worker-0',
       event: { kind: 'turn_end' },
     }
-    expectTypeOf(m1).toMatchTypeOf<ServerMessage>()
-    expectTypeOf(m2).toMatchTypeOf<ServerMessage>()
+    expectTypeOf(m1).toExtend<ServerMessage>()
+    expectTypeOf(m2).toExtend<ServerMessage>()
   })
 
   it('TextBlock has the correct shape', () => {
     const b: TextBlock = { type: 'text', text: 'hello' }
-    expectTypeOf(b).toMatchTypeOf<TextBlock>()
+    expectTypeOf(b).toExtend<TextBlock>()
   })
 
   it('ToolBlock has the correct shape', () => {
     const b: ToolBlock = { type: 'tool_use', name: 'bash', input: {} }
-    expectTypeOf(b).toMatchTypeOf<ToolBlock>()
+    expectTypeOf(b).toExtend<ToolBlock>()
   })
 
   it('ToolResultBlock has the correct shape', () => {
     const b: ToolResultBlock = { type: 'tool_result', content: 'ok' }
-    expectTypeOf(b).toMatchTypeOf<ToolResultBlock>()
+    expectTypeOf(b).toExtend<ToolResultBlock>()
   })
 
   it('Block is a union of TextBlock, ToolBlock, ToolResultBlock', () => {
     const b1: Block = { type: 'text', text: 'hi' }
     const b2: Block = { type: 'tool_use', name: 'bash', input: null }
     const b3: Block = { type: 'tool_result', content: [] }
-    expectTypeOf(b1).toMatchTypeOf<Block>()
-    expectTypeOf(b2).toMatchTypeOf<Block>()
-    expectTypeOf(b3).toMatchTypeOf<Block>()
+    expectTypeOf(b1).toExtend<Block>()
+    expectTypeOf(b2).toExtend<Block>()
+    expectTypeOf(b3).toExtend<Block>()
   })
 
   it('UserMessage has role user and text', () => {
     const m: UserMessage = { role: 'user', text: 'hello' }
-    expectTypeOf(m).toMatchTypeOf<UserMessage>()
+    expectTypeOf(m).toExtend<UserMessage>()
   })
 
   it('AssistantMessage has role assistant and blocks array', () => {
     const m: AssistantMessage = { role: 'assistant', blocks: [] }
-    expectTypeOf(m).toMatchTypeOf<AssistantMessage>()
+    expectTypeOf(m).toExtend<AssistantMessage>()
   })
 
   it('CompactionMessage has role compaction and summary', () => {
     const m: CompactionMessage = { role: 'compaction', summary: 'compact' }
-    expectTypeOf(m).toMatchTypeOf<CompactionMessage>()
+    expectTypeOf(m).toExtend<CompactionMessage>()
   })
 
   it('Message is a union of UserMessage, AssistantMessage, CompactionMessage', () => {
     const m1: Message = { role: 'user', text: 'hi' }
     const m2: Message = { role: 'assistant', blocks: [] }
     const m3: Message = { role: 'compaction', summary: 'summary' }
-    expectTypeOf(m1).toMatchTypeOf<Message>()
-    expectTypeOf(m2).toMatchTypeOf<Message>()
-    expectTypeOf(m3).toMatchTypeOf<Message>()
+    expectTypeOf(m1).toExtend<Message>()
+    expectTypeOf(m2).toExtend<Message>()
+    expectTypeOf(m3).toExtend<Message>()
   })
 })

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type SyntheticEvent } from 'react'
 import AgentTabs from './AgentTabs'
 import IssueGraph from './IssueGraph'
 import { useAgentEvents } from './useAgentEvents'
@@ -65,7 +65,7 @@ export default function App() {
   }, [repo])
 
   const handleRepoSubmit = useCallback(
-    (e: React.FormEvent) => {
+    (e: SyntheticEvent<HTMLFormElement>) => {
       e.preventDefault()
       const trimmed = repoInput.trim()
       if (trimmed) setRepo(trimmed)
@@ -119,7 +119,7 @@ export default function App() {
 // Styles
 // ---------------------------------------------------------------------------
 
-const rootStyle: React.CSSProperties = {
+const rootStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   height: '100vh',
@@ -128,7 +128,7 @@ const rootStyle: React.CSSProperties = {
   fontFamily: 'system-ui, sans-serif',
 }
 
-const toolbarStyle: React.CSSProperties = {
+const toolbarStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   gap: '8px',
@@ -138,13 +138,13 @@ const toolbarStyle: React.CSSProperties = {
   flexShrink: 0,
 }
 
-const formStyle: React.CSSProperties = {
+const formStyle: CSSProperties = {
   display: 'flex',
   gap: '6px',
   flex: 1,
 }
 
-const repoInputStyle: React.CSSProperties = {
+const repoInputStyle: CSSProperties = {
   flex: 1,
   padding: '6px 12px',
   background: '#111827',
@@ -155,7 +155,7 @@ const repoInputStyle: React.CSSProperties = {
   outline: 'none',
 }
 
-const secondaryButtonStyle: React.CSSProperties = {
+const secondaryButtonStyle: CSSProperties = {
   padding: '6px 14px',
   background: '#374151',
   border: 'none',
@@ -165,7 +165,7 @@ const secondaryButtonStyle: React.CSSProperties = {
   fontSize: '14px',
 }
 
-const startButtonStyle: React.CSSProperties = {
+const startButtonStyle: CSSProperties = {
   padding: '6px 18px',
   background: '#3b82f6',
   border: 'none',
@@ -176,13 +176,13 @@ const startButtonStyle: React.CSSProperties = {
   fontWeight: 600,
 }
 
-const topPaneStyle: React.CSSProperties = {
+const topPaneStyle: CSSProperties = {
   flex: 1,
   minHeight: 0,
   borderBottom: '1px solid #374151',
 }
 
-const bottomPaneStyle: React.CSSProperties = {
+const bottomPaneStyle: CSSProperties = {
   flex: 1,
   minHeight: 0,
   display: 'flex',

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { app } from '../server/index.ts'
+import { app } from '../server'
 
 describe('project scaffold', () => {
   it('exports an express app', () => {
