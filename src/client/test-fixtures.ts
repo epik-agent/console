@@ -1,14 +1,6 @@
 import { vi } from 'vitest'
 import type { AgentEvent, AgentId, PoolState } from './types'
 
-/** Convert a hex color like "#a0707a" to "rgb(160, 112, 122)" for jsdom comparison. */
-export function hexToRgb(hex: string): string {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  return `rgb(${r}, ${g}, ${b})`
-}
-
 /** Empty no-op callback suitable as a placeholder for onSend / onInterrupt props. */
 export const noop = () => {}
 
@@ -41,6 +33,7 @@ export function makeUseAgentEventsMock() {
   return {
     events: makeEvents(),
     pool: [],
+    connectionStatus: 'connected' as const,
     sendMessage: vi.fn(),
     interrupt: vi.fn(),
   }

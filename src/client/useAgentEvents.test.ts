@@ -68,7 +68,7 @@ describe('useAgentEvents', () => {
   it('connects to WebSocket on mount', () => {
     renderHook(() => useAgentEvents())
     expect(MockWebSocket.instances).toHaveLength(1)
-    expect(MockWebSocket.instances[0].url).toBe('/ws')
+    expect(MockWebSocket.instances[0].url).toMatch(/\/ws$/)
   })
 
   it('pool updates when a pool_state message arrives', () => {
@@ -285,7 +285,7 @@ describe('useAgentEvents', () => {
     expect(() => unmount()).not.toThrow()
   })
 
-  it('silently ignores messages with an unrecognized type', () => {
+  it('silently ignores messages with an unrecognised type', () => {
     const { result } = renderHook(() => useAgentEvents())
     const ws = MockWebSocket.instances[0]
 

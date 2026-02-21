@@ -7,44 +7,29 @@ import type { AgentEvent, AgentId, IssueGraph as IssueGraphType } from './types'
 // Constants
 // ---------------------------------------------------------------------------
 
-/** Node fill color for closed issues. */
-const COLOR_CLOSED = '#22c55e'
-/** Node fill color for open issues. */
-const COLOR_OPEN = '#f59e0b'
-/** Transient fill color during a blink animation. */
-const COLOR_BLINK = '#ffffff'
-/** How long (ms) a node blinks white when a new agent event arrives. */
+const COLOR_CLOSED = '#34d399'
+const COLOR_OPEN = '#f5a623'
+const COLOR_BLINK = '#00e599'
 const BLINK_DURATION_MS = 500
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-/** Internal graph node shape consumed by `react-force-graph-2d`. */
 interface IssueNode extends NodeObject {
-  /** GitHub issue number (used as the graph node ID). */
   id: number
-  /** Issue title shown as a tooltip. */
   label: string
-  /** Whether the issue is open or closed. */
   state: 'open' | 'closed'
 }
 
-/** Directed edge in the force graph — an arrow from `source` to `target`. */
 interface IssueLink {
-  /** Issue number of the blocker (dependency). */
   source: number
-  /** Issue number of the blocked issue (dependent). */
   target: number
 }
 
-/** Props for the {@link IssueGraph} component. */
 interface IssueGraphProps {
-  /** Issue dependency graph to visualise. */
   graph: IssueGraphType
-  /** Per-agent event streams — used to trigger blink animations. */
   events: Record<AgentId, AgentEvent[]>
-  /** Maps agentId to the issue number it is currently working on. */
   agentIssueMap?: Partial<Record<AgentId, number>>
 }
 
@@ -52,26 +37,11 @@ interface IssueGraphProps {
 // Component
 // ---------------------------------------------------------------------------
 
-/**
- * Force-directed visualisation of the issue dependency graph.
- *
- * Nodes are colored green (closed) or amber (open). When a new
- * {@link AgentEvent} arrives for an agent that is mapped to an issue via
- * `agentIssueMap`, the corresponding node briefly flashes white for
- * {@link BLINK_DURATION_MS} milliseconds.
- *
- * Edges point from blocker → blocked, with arrowheads at the target.
- */
 export default function IssueGraph({ graph, events, agentIssueMap }: IssueGraphProps) {
   const [blinkingIssues, setBlinkingIssues] = useState<Set<number>>(new Set())
-
-  // Track previous event counts per agent so we can detect new arrivals.
   const prevEventCountsRef = useRef<Partial<Record<AgentId, number>>>({})
   const blinkTimers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map())
 
-  // Detect new agent events and trigger blink for mapped issues.
-  // We schedule the state update via setTimeout(fn, 0) to avoid calling
-  // setState synchronously inside the effect body (react-hooks/set-state-in-effect).
   useEffect(() => {
     if (!agentIssueMap) return
 
@@ -90,7 +60,6 @@ export default function IssueGraph({ graph, events, agentIssueMap }: IssueGraphP
 
     if (issuesToBlink.length === 0) return
 
-    // Schedule blink-on asynchronously so setState is not called synchronously.
     const onTimer = setTimeout(() => {
       setBlinkingIssues((prev) => {
         const next = new Set(prev)
@@ -99,7 +68,6 @@ export default function IssueGraph({ graph, events, agentIssueMap }: IssueGraphP
       })
     }, 0)
 
-    // Schedule blink-off after the blink duration.
     const timers = issuesToBlink.map((issueNumber) => {
       const existing = blinkTimers.current.get(issueNumber)
       if (existing) clearTimeout(existing)
@@ -123,7 +91,6 @@ export default function IssueGraph({ graph, events, agentIssueMap }: IssueGraphP
     }
   }, [events, agentIssueMap])
 
-  // Clean up all blink timers on unmount.
   useEffect(() => {
     const timers = blinkTimers.current
     return () => {
@@ -133,7 +100,8 @@ export default function IssueGraph({ graph, events, agentIssueMap }: IssueGraphP
     }
   }, [])
 
-  // Build graph data from IssueGraph prop.
+  const hasNodes = graph.nodes.length > 0
+
   const nodes: IssueNode[] = graph.nodes.map((n) => ({
     id: n.number,
     label: n.title,
@@ -150,14 +118,58 @@ export default function IssueGraph({ graph, events, agentIssueMap }: IssueGraphP
     return issueNode.state === 'closed' ? COLOR_CLOSED : COLOR_OPEN
   }
 
+  if (!hasNodes) {
+    return (
+      <div className="empty-state">
+        <div className="empty-state-icon" aria-hidden="true">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M8 12h8" />
+            <path d="M12 8v8" />
+          </svg>
+        </div>
+        <div className="empty-state-title">No issues loaded</div>
+        <div className="empty-state-desc">
+          Enter a repository above and click Load to visualize the issue dependency graph.
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <ForceGraph2D
-      graphData={{ nodes, links }}
-      nodeId="id"
-      nodeLabel="label"
-      nodeColor={nodeColor}
-      linkDirectionalArrowLength={6}
-      linkDirectionalArrowRelPos={1}
-    />
+    <div className="graph-container">
+      <ForceGraph2D
+        graphData={{ nodes, links }}
+        nodeId="id"
+        nodeLabel="label"
+        nodeColor={nodeColor}
+        nodeRelSize={6}
+        linkDirectionalArrowLength={6}
+        linkDirectionalArrowRelPos={1}
+        linkColor={() => 'rgba(255,255,255,0.10)'}
+        backgroundColor="transparent"
+      />
+
+      {/* Legend */}
+      <div className="graph-legend">
+        <div className="graph-legend-item">
+          <span className="graph-legend-dot" style={{ background: COLOR_OPEN }} />
+          <span>Open</span>
+        </div>
+        <div className="graph-legend-item">
+          <span className="graph-legend-dot" style={{ background: COLOR_CLOSED }} />
+          <span>Closed</span>
+        </div>
+      </div>
+    </div>
   )
 }

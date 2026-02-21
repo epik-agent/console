@@ -1,40 +1,53 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { AgentEvent, AgentId, PoolState, ServerMessage } from './types'
+import type { AgentEvent, AgentId, ConnectionStatus, PoolState, ServerMessage } from './types'
 
-/** Milliseconds to wait before attempting a WebSocket reconnect after a close. */
-const RECONNECT_DELAY_MS = 1000
+/** Base delay in ms before first reconnect attempt. */
+const BASE_DELAY_MS = 1_000
+/** Maximum delay in ms between reconnect attempts. */
+const MAX_DELAY_MS = 30_000
+
+/**
+ * Resolve the WebSocket URL to connect to.
+ *
+ * - If `VITE_WS_URL` is set, use it directly (for split deploys).
+ * - Otherwise build a relative URL from `window.location`.
+ */
+function resolveWsUrl(): string {
+  const env = import.meta.env.VITE_WS_URL as string | undefined
+  if (env) return env
+  const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${proto}//${window.location.host}/ws`
+}
+
+/**
+ * Resolve the HTTP API base URL.
+ *
+ * - If `VITE_API_URL` is set, use it (no trailing slash).
+ * - Otherwise use an empty string (relative fetch).
+ */
+export function resolveApiBase(): string {
+  const env = import.meta.env.VITE_API_URL as string | undefined
+  return env ? env.replace(/\/+$/, '') : ''
+}
 
 /**
  * Return value of {@link useAgentEvents}.
- *
- * Provides the live event stream, pool snapshot, and imperative callbacks for
- * sending messages and interrupting in-progress agent turns.
  */
 export interface AgentEventsState {
-  /** All events received per agent since the WebSocket connected, in arrival order. */
   events: Record<AgentId, AgentEvent[]>
-  /** Most recent pool state snapshot pushed by the server. */
   pool: PoolState
-  /**
-   * POST `/api/message` — injects `text` as a user turn into the specified agent.
-   *
-   * @param agentId - Target agent.
-   * @param text    - Message body.
-   */
+  connectionStatus: ConnectionStatus
   sendMessage: (agentId: AgentId, text: string) => void
-  /**
-   * POST `/api/interrupt` — cancels the in-progress turn of the specified agent.
-   *
-   * @param agentId - Target agent.
-   */
   interrupt: (agentId: AgentId) => void
 }
 
 /**
- * Opens (and auto-reconnects) a WebSocket to `/ws`, accumulates incoming
- * {@link AgentEvent}s per agent, and keeps the {@link PoolState} up to date.
+ * Opens (and auto-reconnects with exponential backoff) a WebSocket,
+ * accumulates incoming {@link AgentEvent}s per agent, and keeps the
+ * {@link PoolState} up to date.
  *
- * The WebSocket is closed when the component using this hook unmounts.
+ * Exposes a {@link ConnectionStatus} so the UI can show a banner when
+ * the backend is unavailable.
  */
 export function useAgentEvents(): AgentEventsState {
   const [events, setEvents] = useState<Record<AgentId, AgentEvent[]>>({
@@ -44,16 +57,35 @@ export function useAgentEvents(): AgentEventsState {
     'worker-2': [],
   })
   const [pool, setPool] = useState<PoolState>([])
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting')
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const attemptRef = useRef(0)
 
   useEffect(() => {
     let active = true
 
     function connect() {
       if (!active) return
-      const ws = new WebSocket('/ws')
+      setConnectionStatus('connecting')
+
+      let ws: WebSocket
+      try {
+        ws = new WebSocket(resolveWsUrl())
+      } catch {
+        // WebSocket constructor can throw if the URL is invalid
+        setConnectionStatus('disconnected')
+        scheduleReconnect()
+        return
+      }
+
       wsRef.current = ws
+
+      ws.onopen = () => {
+        if (!active) return
+        attemptRef.current = 0
+        setConnectionStatus('connected')
+      }
 
       ws.onmessage = (event: MessageEvent<string>) => {
         let msg: ServerMessage
@@ -74,10 +106,21 @@ export function useAgentEvents(): AgentEventsState {
         }
       }
 
+      ws.onerror = () => {
+        // onerror is always followed by onclose; no-op here.
+      }
+
       ws.onclose = () => {
         if (!active) return
-        reconnectTimer.current = setTimeout(connect, RECONNECT_DELAY_MS)
+        setConnectionStatus('disconnected')
+        scheduleReconnect()
       }
+    }
+
+    function scheduleReconnect() {
+      const delay = Math.min(BASE_DELAY_MS * 2 ** attemptRef.current, MAX_DELAY_MS)
+      attemptRef.current += 1
+      reconnectTimer.current = setTimeout(connect, delay)
     }
 
     connect()
@@ -91,21 +134,29 @@ export function useAgentEvents(): AgentEventsState {
     }
   }, [])
 
-  const sendMessage = useCallback((agentId: AgentId, text: string) => {
-    void fetch('/api/message', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ agentId, text }),
-    })
-  }, [])
+  const apiBase = resolveApiBase()
 
-  const interrupt = useCallback((agentId: AgentId) => {
-    void fetch('/api/interrupt', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ agentId }),
-    })
-  }, [])
+  const sendMessage = useCallback(
+    (agentId: AgentId, text: string) => {
+      void fetch(`${apiBase}/api/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId, text }),
+      })
+    },
+    [apiBase],
+  )
 
-  return { events, pool, sendMessage, interrupt }
+  const interrupt = useCallback(
+    (agentId: AgentId) => {
+      void fetch(`${apiBase}/api/interrupt`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId }),
+      })
+    },
+    [apiBase],
+  )
+
+  return { events, pool, connectionStatus, sendMessage, interrupt }
 }

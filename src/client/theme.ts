@@ -1,16 +1,17 @@
-/** `'dark'` or `'light'` — the two supported color modes. */
+/** `'dark'` or `'light'` — the two supported colour modes. */
 export type Theme = 'dark' | 'light'
 
-// Epik logo palette: #f6f2ee (cream), #a0707a (mauve), #2a2a2a (charcoal)
+// Epik brand palette: Monochrome + Electric Green (#00E599)
+// Typefaces: Geist (sans), Geist Mono (mono)
 
 /**
- * A complete color palette for one {@link Theme}.
+ * A complete colour palette for one {@link Theme}.
  *
- * Every component that needs a color reads it from a `Palette` instance rather
+ * Every component that needs a colour reads it from a `Palette` instance rather
  * than hard-coding a hex value, so dark/light switching is a single prop swap.
  */
 export interface Palette {
-  /** Background colors for distinct surface layers. */
+  /** Background colours for distinct surface layers. */
   bg: {
     /** App root background. */
     root: string
@@ -27,7 +28,7 @@ export interface Palette {
     /** Input bar container background. */
     inputBar: string
   }
-  /** Text colors for distinct emphasis levels. */
+  /** Text colours for distinct emphasis levels. */
   text: {
     /** Primary body text. */
     primary: string
@@ -42,7 +43,7 @@ export interface Palette {
     /** Tool card body text. */
     toolBody: string
   }
-  /** Border colors. */
+  /** Border colours. */
   border: {
     /** Default subtle border. */
     default: string
@@ -51,7 +52,7 @@ export interface Palette {
     /** Border used around tool-result cards. */
     toolResult: string
   }
-  /** Feature/persona accent color (overridden per-feature in the UI). */
+  /** Feature/persona accent colour (overridden per-feature in the UI). */
   accent: string
 }
 
@@ -59,52 +60,52 @@ export interface Palette {
 export const themes: Record<Theme, Palette> = {
   dark: {
     bg: {
-      root: '#1e1b1b', // warm near-black
-      bar: '#161313', // deeper charcoal
-      input: '#2a2525', // warm dark input
-      toolCard: '#2a2525',
-      toolResult: '#231f1f',
-      toolHeader: '#342e2e',
-      inputBar: '#2a2525',
+      root: '#0a0a0a',
+      bar: '#0e0e0e',
+      input: '#141414',
+      toolCard: '#141414',
+      toolResult: '#111111',
+      toolHeader: '#1a1a1a',
+      inputBar: '#0e0e0e',
     },
     text: {
-      primary: '#f0ebe6', // warm off-white (near logo cream)
-      secondary: '#d9d0c8', // slightly muted cream
-      muted: '#a89890', // warm gray-brown
-      faint: '#72625a', // muted terracotta
-      toolHeader: '#d9d0c8',
-      toolBody: '#ede6df',
+      primary: '#ededed',
+      secondary: '#a0a0a0',
+      muted: '#666666',
+      faint: '#404040',
+      toolHeader: '#a0a0a0',
+      toolBody: '#ededed',
     },
     border: {
-      default: '#3d3535',
-      strong: '#524848',
-      toolResult: '#342e2e',
+      default: '#1f1f1f',
+      strong: '#333333',
+      toolResult: '#1f1f1f',
     },
-    accent: '#a0707a', // mauve
+    accent: '#00e599',
   },
   light: {
     bg: {
-      root: '#f6f2ee', // logo background cream
-      bar: '#ede7e0', // slightly deeper cream
-      input: '#faf8f5', // near-white warm
-      toolCard: '#faf8f5',
-      toolResult: '#ede7e0',
-      toolHeader: '#e0d8d0',
-      inputBar: '#ede7e0',
+      root: '#fafafa',
+      bar: '#f0f0f0',
+      input: '#ffffff',
+      toolCard: '#f5f5f5',
+      toolResult: '#f0f0f0',
+      toolHeader: '#e5e5e5',
+      inputBar: '#f0f0f0',
     },
     text: {
-      primary: '#2a2a2a', // logo charcoal
-      secondary: '#3d3535', // warm dark brown
-      muted: '#6b5e58', // medium warm brown
-      faint: '#9e8e87', // light warm brown
-      toolHeader: '#3d3535',
-      toolBody: '#1e1b1b',
+      primary: '#0a0a0a',
+      secondary: '#525252',
+      muted: '#737373',
+      faint: '#a3a3a3',
+      toolHeader: '#525252',
+      toolBody: '#0a0a0a',
     },
     border: {
-      default: '#d4ccc4',
-      strong: '#b8afa7',
-      toolResult: '#ccc4bc',
+      default: '#e0e0e0',
+      strong: '#c7c7c7',
+      toolResult: '#e0e0e0',
     },
-    accent: '#a0707a', // mauve
+    accent: '#00b377',
   },
 }
