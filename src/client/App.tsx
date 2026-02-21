@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type SyntheticEvent } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type SyntheticEvent,
+} from 'react'
 import AgentTabs from './AgentTabs'
 import IssueGraph from './IssueGraph'
 import { useAgentEvents } from './useAgentEvents'

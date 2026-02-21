@@ -110,10 +110,7 @@ export async function runAgent(opts: RunAgentOptions): Promise<{ interrupt?: () 
 
     if (msg.type === 'stream_event') {
       const evt = msg.event
-      if (
-        evt.type === 'content_block_delta' &&
-        evt.delta.type === 'text_delta'
-      ) {
+      if (evt.type === 'content_block_delta' && evt.delta.type === 'text_delta') {
         opts.send({ kind: 'text_delta', text: evt.delta.text })
       }
       continue
@@ -169,5 +166,9 @@ export async function runAgent(opts: RunAgentOptions): Promise<{ interrupt?: () 
 
   opts.send({ kind: 'turn_end' })
 
-  return { interrupt: () => { void messages.interrupt() } }
+  return {
+    interrupt: () => {
+      void messages.interrupt()
+    },
+  }
 }
