@@ -65,7 +65,7 @@ export default function App() {
   }, [repo])
 
   const handleRepoSubmit = useCallback(
-    (e: React.FormEvent) => {
+    (e: SubmitEvent) => {
       e.preventDefault()
       const trimmed = repoInput.trim()
       if (trimmed) setRepo(trimmed)
