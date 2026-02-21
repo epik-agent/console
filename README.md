@@ -37,7 +37,7 @@ Open http://localhost:5173 and enter `epik-agent/builder` (or any
 - The toolbar at the top with a repository input field and **Load** / **Start** buttons.
 - The issue dependency graph in the top half of the screen (empty until a repo is loaded).
 - The agent console tabs (Supervisor, Worker 0/1/2) in the bottom half.
-- After loading a repo, coloured nodes appear in the graph — one per open issue.
+- After loading a repo, colored nodes appear in the graph — one per open issue.
 
 ## Local development
 

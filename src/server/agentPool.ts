@@ -60,7 +60,7 @@ interface AgentRuntimeState extends WorkerState {
 // ---------------------------------------------------------------------------
 
 /**
- * Creates and initialises the agent pool.
+ * Creates and initializes the agent pool.
  *
  * Spawns 1 Supervisor + 3 Worker agents, subscribes each to its NATS topic,
  * and wires incoming messages to the agent's runAgent() turn mechanism.
@@ -68,7 +68,7 @@ interface AgentRuntimeState extends WorkerState {
 export async function createAgentPool(): Promise<AgentPool> {
   const nc: NatsConnection = await getNatsConnection()
 
-  // Initialise agent states
+  // Initialize agent states
   const agentStates = new Map<AgentId, AgentRuntimeState>()
 
   const agentDefs: Array<{ id: AgentId; role: WorkerRole }> = [

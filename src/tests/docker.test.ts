@@ -11,6 +11,8 @@
  * - Static files served from `dist/` in production
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { loadIssueGraph, runGhCommand } from '../server/github.ts'
+import { readProjectFile } from './test-fixtures.ts'
 
 // ---------------------------------------------------------------------------
 // NATS URL configuration
@@ -62,7 +64,6 @@ describe('nats module — NATS_URL env var', () => {
 describe('github module — GH_TOKEN handling', () => {
   it('passes GH_TOKEN to the gh CLI environment when set', async () => {
     process.env['GH_TOKEN'] = 'test-token-123'
-    const { runGhCommand } = await import('../server/github.ts')
     // runGhCommand calls execFile with gh; we can't easily intercept execFile here,
     // but we can verify the function is exported and callable.
     // The actual env-passing is tested via the exec parameter pattern.
@@ -71,8 +72,6 @@ describe('github module — GH_TOKEN handling', () => {
   })
 
   it('returns a clear error message when GH_TOKEN is not configured', async () => {
-    const { loadIssueGraph } = await import('../server/github.ts')
-
     // Simulate gh CLI failing because no token is available
     const execNoToken = vi
       .fn()
@@ -82,13 +81,16 @@ describe('github module — GH_TOKEN handling', () => {
         ),
       )
 
-    // The loadIssueGraph should propagate an error with a useful message
-    await expect(loadIssueGraph('owner', 'repo', execNoToken)).rejects.toThrow()
+    let threw = false
+    try {
+      await loadIssueGraph('owner', 'repo', execNoToken)
+    } catch {
+      threw = true
+    }
+    expect(threw).toBe(true)
   })
 
   it('loadIssueGraph raises an error that mentions GitHub token when gh CLI rejects with auth error', async () => {
-    const { loadIssueGraph } = await import('../server/github.ts')
-
     const authError = new Error(
       'HTTP 401: Bad credentials (https://api.github.com/repos/owner/repo/issues?state=open&per_page=100)',
     )
@@ -153,101 +155,31 @@ describe('server — PORT env var', () => {
 // ---------------------------------------------------------------------------
 
 describe('docker configuration files', () => {
-  it('Dockerfile exists at the project root', async () => {
-    const { readFileSync } = await import('fs')
-    const { resolve } = await import('path')
-    const { fileURLToPath } = await import('url')
-
-    const dir = resolve(fileURLToPath(import.meta.url), '../../..')
-    let content: string
-    try {
-      content = readFileSync(resolve(dir, 'Dockerfile'), 'utf-8')
-    } catch {
-      content = ''
-    }
-
+  it('Dockerfile exists at the project root', () => {
+    const content = readProjectFile('Dockerfile')
     expect(content).toBeTruthy()
     expect(content).toContain('FROM')
   })
 
-  it('docker-compose.yml exists at the project root', async () => {
-    const { readFileSync } = await import('fs')
-    const { resolve } = await import('path')
-    const { fileURLToPath } = await import('url')
-
-    const dir = resolve(fileURLToPath(import.meta.url), '../../..')
-    let content: string
-    try {
-      content = readFileSync(resolve(dir, 'docker-compose.yml'), 'utf-8')
-    } catch {
-      content = ''
-    }
-
+  it('docker-compose.yml exists at the project root', () => {
+    const content = readProjectFile('docker-compose.yml')
     expect(content).toBeTruthy()
     expect(content).toContain('nats')
   })
 
-  it('docker-compose.yml exposes port 5173', async () => {
-    const { readFileSync } = await import('fs')
-    const { resolve } = await import('path')
-    const { fileURLToPath } = await import('url')
-
-    const dir = resolve(fileURLToPath(import.meta.url), '../../..')
-    let content: string
-    try {
-      content = readFileSync(resolve(dir, 'docker-compose.yml'), 'utf-8')
-    } catch {
-      content = ''
-    }
-
-    expect(content).toContain('5173')
+  it('docker-compose.yml exposes port 5173', () => {
+    expect(readProjectFile('docker-compose.yml')).toContain('5173')
   })
 
-  it('Dockerfile contains npm run build step', async () => {
-    const { readFileSync } = await import('fs')
-    const { resolve } = await import('path')
-    const { fileURLToPath } = await import('url')
-
-    const dir = resolve(fileURLToPath(import.meta.url), '../../..')
-    let content: string
-    try {
-      content = readFileSync(resolve(dir, 'Dockerfile'), 'utf-8')
-    } catch {
-      content = ''
-    }
-
-    expect(content).toContain('npm run build')
+  it('Dockerfile contains npm run build step', () => {
+    expect(readProjectFile('Dockerfile')).toContain('npm run build')
   })
 
-  it('Dockerfile references GH_TOKEN', async () => {
-    const { readFileSync } = await import('fs')
-    const { resolve } = await import('path')
-    const { fileURLToPath } = await import('url')
-
-    const dir = resolve(fileURLToPath(import.meta.url), '../../..')
-    let content: string
-    try {
-      content = readFileSync(resolve(dir, 'Dockerfile'), 'utf-8')
-    } catch {
-      content = ''
-    }
-
-    expect(content).toContain('GH_TOKEN')
+  it('Dockerfile references GH_TOKEN', () => {
+    expect(readProjectFile('Dockerfile')).toContain('GH_TOKEN')
   })
 
-  it('README.md contains docker compose up instructions', async () => {
-    const { readFileSync } = await import('fs')
-    const { resolve } = await import('path')
-    const { fileURLToPath } = await import('url')
-
-    const dir = resolve(fileURLToPath(import.meta.url), '../../..')
-    let content: string
-    try {
-      content = readFileSync(resolve(dir, 'README.md'), 'utf-8')
-    } catch {
-      content = ''
-    }
-
-    expect(content).toContain('docker compose up')
+  it('README.md contains docker compose up instructions', () => {
+    expect(readProjectFile('README.md')).toContain('docker compose up')
   })
 })

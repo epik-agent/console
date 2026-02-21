@@ -3,10 +3,10 @@ import { describe, expect, it, vi } from 'vitest'
 import userEvent from '@testing-library/user-event'
 import ConsolePane, { ToolUseCard, ToolResultCard } from './ConsolePane'
 import { themes } from './theme'
+import { noop } from './test-fixtures'
 import type { AgentEvent, AgentId } from './types'
 
 const agentId: AgentId = 'worker-0'
-const noop = () => {}
 const palette = themes['dark']
 
 describe('ConsolePane', () => {
@@ -35,7 +35,7 @@ describe('ConsolePane', () => {
   })
 
   it('renders a compaction marker for compaction events', () => {
-    const events: AgentEvent[] = [{ kind: 'compaction', summary: 'Context was summarised' }]
+    const events: AgentEvent[] = [{ kind: 'compaction', summary: 'Context was summarized' }]
     render(<ConsolePane agentId={agentId} events={events} onSend={noop} onInterrupt={noop} />)
     expect(screen.getByTestId('compaction-marker')).toBeInTheDocument()
     expect(screen.getByText('Context compacted')).toBeInTheDocument()

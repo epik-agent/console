@@ -1,23 +1,8 @@
 import { renderHook, act } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { useAgentIssueMap } from './useAgentIssueMap'
+import { makeEvents } from './test-fixtures'
 import type { AgentEvent, AgentId } from './types'
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function makeEvents(
-  overrides: Partial<Record<AgentId, AgentEvent[]>>,
-): Record<AgentId, AgentEvent[]> {
-  return {
-    supervisor: [],
-    'worker-0': [],
-    'worker-1': [],
-    'worker-2': [],
-    ...overrides,
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Tests

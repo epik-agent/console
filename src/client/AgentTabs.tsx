@@ -27,7 +27,7 @@ interface AgentTabsProps {
    * @param agentId - Agent whose turn should be cancelled.
    */
   onInterrupt: (agentId: AgentId) => void
-  /** Active colour theme; defaults to `'dark'`. */
+  /** Active color theme; defaults to `'dark'`. */
   theme?: Theme
 }
 
@@ -70,7 +70,7 @@ function workerStatus(pool: PoolState, id: AgentId): 'idle' | 'busy' {
  * Small pill badge showing `Idle` (grey) or `Busy` (amber) next to a tab label.
  *
  * @param status  - Current agent status.
- * @param palette - Active colour palette for theming.
+ * @param palette - Active color palette for theming.
  */
 function StatusBadge({ status, palette }: { status: 'idle' | 'busy'; palette: Palette }) {
   const isBusy = status === 'busy'

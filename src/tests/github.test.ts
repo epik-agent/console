@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { loadIssueGraph, getPRStatus } from '../server/github.ts'
+import { loadIssueGraph, getPRStatus, runGhCommand } from '../server/github.ts'
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -85,7 +85,7 @@ const PR_FIXTURE_PENDING = [
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Build a mock exec function that resolves with the serialised fixture. */
+/** Build a mock exec function that resolves with the serialized fixture. */
 function makeExec(fixture: object[]): (args: string[]) => Promise<string> {
   return vi.fn().mockResolvedValue(JSON.stringify(fixture))
 }
@@ -156,7 +156,7 @@ describe('github', () => {
       expect(graph.nodes.find((n) => n.number === 3)?.type).toBe('Bug')
     })
 
-    it('sets type to null when no recognised label is present', async () => {
+    it('sets type to null when no recognized label is present', async () => {
       const graph = await loadIssueGraph('owner', 'repo', makeExec(ISSUE_FIXTURE))
       expect(graph.nodes.find((n) => n.number === 4)?.type).toBeNull()
       expect(graph.nodes.find((n) => n.number === 5)?.type).toBeNull()
@@ -204,7 +204,13 @@ describe('github', () => {
 
     it('rejects on gh cli error', async () => {
       const exec = makeExecError(new Error('gh: not found'))
-      await expect(loadIssueGraph('owner', 'repo', exec)).rejects.toThrow('gh: not found')
+      let caught: Error | null = null
+      try {
+        await loadIssueGraph('owner', 'repo', exec)
+      } catch (err) {
+        caught = err as Error
+      }
+      expect(caught?.message).toContain('gh: not found')
     })
   })
 
@@ -294,20 +300,22 @@ describe('github', () => {
 
   describe('runGhCommand', () => {
     it('rejects when gh is not found on PATH', async () => {
-      const { runGhCommand } = await import('../server/github.ts')
       // Point PATH away from gh so execFile fails
       const savedPath = process.env['PATH']
       process.env['PATH'] = '/nonexistent'
+      let threw = false
       try {
-        await expect(runGhCommand(['version'])).rejects.toThrow()
+        await runGhCommand(['version'])
+      } catch {
+        threw = true
       } finally {
         process.env['PATH'] = savedPath
       }
+      expect(threw).toBe(true)
     })
 
     it('resolves with stdout when the command succeeds', async () => {
       // Use a real command that gh wraps — `gh --version` outputs to stdout
-      const { runGhCommand } = await import('../server/github.ts')
       // `gh version` or `gh --version` should be available in the CI/dev environment.
       // If gh is not installed this test will fail — that's acceptable as a hard dependency.
       const output = await runGhCommand(['--version'])

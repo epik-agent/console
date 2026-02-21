@@ -2,6 +2,7 @@ import { act, render } from '@testing-library/react'
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import type { GraphData, NodeObject, LinkObject } from 'react-force-graph-2d'
 import IssueGraph from './IssueGraph'
+import { makeEvents } from './test-fixtures'
 import type { AgentEvent, AgentId, IssueGraph as IssueGraphType } from './types'
 
 // ---------------------------------------------------------------------------
@@ -46,12 +47,7 @@ const sampleGraph: IssueGraphType = {
   ],
 }
 
-const noEvents: Record<AgentId, AgentEvent[]> = {
-  supervisor: [],
-  'worker-0': [],
-  'worker-1': [],
-  'worker-2': [],
-}
+const noEvents = makeEvents()
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -79,9 +75,9 @@ describe('IssueGraph', () => {
     expect(nodeIds).toContain(3)
   })
 
-  // ── AC2: node colours match open/closed state ──────────────────────────────
+  // ── AC2: node colors match open/closed state ──────────────────────────────
 
-  it('colours closed nodes green (#22c55e)', () => {
+  it('colors closed nodes green (#22c55e)', () => {
     render(<IssueGraph graph={sampleGraph} events={noEvents} />)
 
     expect(capturedNodeColorFn).not.toBeNull()
@@ -89,7 +85,7 @@ describe('IssueGraph', () => {
     expect(capturedNodeColorFn!(closedNode)).toBe('#22c55e')
   })
 
-  it('colours open nodes amber (#f59e0b)', () => {
+  it('colors open nodes amber (#f59e0b)', () => {
     render(<IssueGraph graph={sampleGraph} events={noEvents} />)
 
     expect(capturedNodeColorFn).not.toBeNull()
@@ -141,16 +137,16 @@ describe('IssueGraph', () => {
       'worker-0': [{ kind: 'text_delta', text: 'working on issue 2' }],
     }
 
-    // Re-render with events — the nodeColor function should return the blink colour
+    // Re-render with events — the nodeColor function should return the blink color
     // (#ffffff) for node 2 when it is blinking.  Because blink is time-based we
     // instead verify that the component accepts the new events without throwing,
-    // and that the nodeColor function still returns the correct default colours
+    // and that the nodeColor function still returns the correct default colors
     // (blink may or may not be active at this exact render instant).
     expect(() =>
       rerender(<IssueGraph graph={sampleGraph} events={eventsWithActivity} />),
     ).not.toThrow()
 
-    // The node-colour function must still return valid hex strings.
+    // The node-color function must still return valid hex strings.
     const openNode = capturedGraphData!.nodes.find((n) => n.id === 1)!
     const color = capturedNodeColorFn!(openNode)
     expect(color).toMatch(/^#[0-9a-f]{6}$/i)
@@ -172,7 +168,7 @@ describe('IssueGraph', () => {
     ).not.toThrow()
   })
 
-  it('node with active blink returns highlight colour', async () => {
+  it('node with active blink returns highlight color', async () => {
     vi.useFakeTimers()
 
     const eventsWithWorker: Record<AgentId, AgentEvent[]> = {
@@ -192,7 +188,7 @@ describe('IssueGraph', () => {
       vi.advanceTimersByTime(1)
     })
 
-    // During the 500 ms window the blinking node should return the highlight colour.
+    // During the 500 ms window the blinking node should return the highlight color.
     const blinkingNode = capturedGraphData!.nodes.find((n) => n.id === 2)!
     const colorDuringBlink = capturedNodeColorFn!(blinkingNode)
     expect(colorDuringBlink).toBe('#ffffff')

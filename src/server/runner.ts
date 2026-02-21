@@ -36,7 +36,7 @@ export interface RunAgentOptions {
    * Callers wire this to WebSocket or any other transport independently.
    */
   send: (event: AgentEvent) => void
-  /** Called once with the Claude Code session ID when the session initialises. */
+  /** Called once with the Claude Code session ID when the session initializes. */
   onSessionId: (id: string) => void
   /** NATS connection used to publish messages from the `nats_publish` custom tool. */
   natsClient: NatsConnection

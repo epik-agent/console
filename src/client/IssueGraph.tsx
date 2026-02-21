@@ -7,11 +7,11 @@ import type { AgentEvent, AgentId, IssueGraph as IssueGraphType } from './types'
 // Constants
 // ---------------------------------------------------------------------------
 
-/** Node fill colour for closed issues. */
+/** Node fill color for closed issues. */
 const COLOR_CLOSED = '#22c55e'
-/** Node fill colour for open issues. */
+/** Node fill color for open issues. */
 const COLOR_OPEN = '#f59e0b'
-/** Transient fill colour during a blink animation. */
+/** Transient fill color during a blink animation. */
 const COLOR_BLINK = '#ffffff'
 /** How long (ms) a node blinks white when a new agent event arrives. */
 const BLINK_DURATION_MS = 500
@@ -55,7 +55,7 @@ interface IssueGraphProps {
 /**
  * Force-directed visualisation of the issue dependency graph.
  *
- * Nodes are coloured green (closed) or amber (open). When a new
+ * Nodes are colored green (closed) or amber (open). When a new
  * {@link AgentEvent} arrives for an agent that is mapped to an issue via
  * `agentIssueMap`, the corresponding node briefly flashes white for
  * {@link BLINK_DURATION_MS} milliseconds.

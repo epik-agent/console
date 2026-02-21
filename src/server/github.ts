@@ -48,7 +48,7 @@ const TYPE_LABELS = new Set(['Feature', 'Task', 'Bug'])
 /**
  * Parse the "## Blocked by" section from an issue body.
  *
- * Recognises lines of the form `- #N` within the section that follows
+ * Recognizes lines of the form `- #N` within the section that follows
  * a `## Blocked by` heading. Stops at the next `##` heading.
  */
 function parseBlockedBy(body: string | null): number[] {
@@ -79,7 +79,7 @@ function parseBlockedBy(body: string | null): number[] {
 }
 
 /**
- * Extract the recognised type label from a list of labels, or null.
+ * Extract the recognized type label from a list of labels, or null.
  */
 function parseType(labels: Array<{ name: string }>): IssueNode['type'] {
   for (const label of labels) {
@@ -118,7 +118,7 @@ export function runGhCommand(args: string[]): Promise<string> {
  * Calls `gh api /repos/{owner}/{repo}/issues?state=open&per_page=100` and
  * parses each issue body for "## Blocked by" sections to build the graph.
  *
- * @param owner - GitHub organisation or user name.
+ * @param owner - GitHub organization or user name.
  * @param repo  - Repository name.
  * @param exec  - Optional override for the gh runner (used in tests).
  * @returns     The resolved issue dependency graph.
@@ -161,7 +161,7 @@ export async function loadIssueGraph(
  *
  * Returns `null` if no open PR is found for the given issue.
  *
- * @param owner       - GitHub organisation or user name.
+ * @param owner       - GitHub organization or user name.
  * @param repo        - Repository name.
  * @param issueNumber - The issue number to look up.
  * @param exec        - Optional override for the gh runner (used in tests).

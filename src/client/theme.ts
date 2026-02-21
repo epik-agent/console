@@ -1,16 +1,16 @@
-/** `'dark'` or `'light'` — the two supported colour modes. */
+/** `'dark'` or `'light'` — the two supported color modes. */
 export type Theme = 'dark' | 'light'
 
 // Epik logo palette: #f6f2ee (cream), #a0707a (mauve), #2a2a2a (charcoal)
 
 /**
- * A complete colour palette for one {@link Theme}.
+ * A complete color palette for one {@link Theme}.
  *
- * Every component that needs a colour reads it from a `Palette` instance rather
+ * Every component that needs a color reads it from a `Palette` instance rather
  * than hard-coding a hex value, so dark/light switching is a single prop swap.
  */
 export interface Palette {
-  /** Background colours for distinct surface layers. */
+  /** Background colors for distinct surface layers. */
   bg: {
     /** App root background. */
     root: string
@@ -27,7 +27,7 @@ export interface Palette {
     /** Input bar container background. */
     inputBar: string
   }
-  /** Text colours for distinct emphasis levels. */
+  /** Text colors for distinct emphasis levels. */
   text: {
     /** Primary body text. */
     primary: string
@@ -42,7 +42,7 @@ export interface Palette {
     /** Tool card body text. */
     toolBody: string
   }
-  /** Border colours. */
+  /** Border colors. */
   border: {
     /** Default subtle border. */
     default: string
@@ -51,7 +51,7 @@ export interface Palette {
     /** Border used around tool-result cards. */
     toolResult: string
   }
-  /** Feature/persona accent colour (overridden per-feature in the UI). */
+  /** Feature/persona accent color (overridden per-feature in the UI). */
   accent: string
 }
 

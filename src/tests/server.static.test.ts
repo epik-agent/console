@@ -1,29 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import request from 'supertest'
-import type { AgentId, AgentEvent, PoolState } from '../client/types.ts'
+import type { PoolState } from '../client/types.ts'
+import { makeAgentPoolMock } from './test-fixtures.ts'
 
 // ---------------------------------------------------------------------------
 // This test file exercises the static-file-serving branch in index.ts by
 // making existsSync return true for the dist directory.
 // ---------------------------------------------------------------------------
 
-type AgentEventListener = (agentId: AgentId, event: AgentEvent) => void
-
-const mockListeners = new Set<AgentEventListener>()
-
 const mockPool: PoolState = [
   { id: 'supervisor', role: 'supervisor', status: 'idle', sessionId: undefined },
 ]
 
-const mockAgentPool = {
-  getPool: vi.fn(() => mockPool),
-  registerListener: vi.fn((cb: AgentEventListener) => {
-    mockListeners.add(cb)
-    return () => mockListeners.delete(cb)
-  }),
-  injectMessage: vi.fn(),
-  interrupt: vi.fn(),
-}
+const { mockListeners, mockAgentPool } = makeAgentPoolMock(mockPool)
 
 vi.mock('../server/agentPool.ts', () => ({
   createAgentPool: vi.fn(() => Promise.resolve(mockAgentPool)),
@@ -51,7 +40,7 @@ vi.mock('../server/github.ts', () => ({
 vi.mock('fs', async () => {
   const actual = await vi.importActual<typeof import('fs')>('fs')
   const mockExistsSync = vi.fn((p: string) => {
-    if (typeof p === 'string' && p.endsWith('/dist')) return true
+    if (p.endsWith('/dist')) return true
     return actual.existsSync(p)
   })
   return {

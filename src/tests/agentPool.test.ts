@@ -1,24 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { AgentEvent, AgentId } from '../client/types.ts'
+import type { RunAgentOptions } from '../server/runner.ts'
+import { tick } from './test-fixtures.ts'
 
 // ---------------------------------------------------------------------------
 // Mock runner module
 // ---------------------------------------------------------------------------
 
-type RunAgentOpts = {
-  config: { model: string; cwd: string; systemPrompt: string | undefined }
-  sessionId: string | undefined
-  prompt: string
-  send: (event: AgentEvent) => void
-  onSessionId: (id: string) => void
-  onInterruptReady?: (interrupt: () => void) => void
-  natsClient: unknown
-}
-
-let runAgentImpl: (opts: RunAgentOpts) => Promise<{ interrupt?: () => void }> = async () => ({})
+let runAgentImpl: (opts: RunAgentOptions) => Promise<{ interrupt?: () => void }> = async () => ({})
 
 vi.mock('../server/runner.ts', () => ({
-  runAgent: (opts: RunAgentOpts) => runAgentImpl(opts),
+  runAgent: (opts: RunAgentOptions) => runAgentImpl(opts),
 }))
 
 // ---------------------------------------------------------------------------
@@ -61,6 +53,11 @@ function triggerNatsMessage(topic: string, text: string) {
   sub?.handler({ data: encoder.encode(text) })
 }
 
+async function makePool() {
+  const { createAgentPool } = await import('../server/agentPool.ts')
+  return createAgentPool()
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -72,9 +69,8 @@ describe('agentPool', () => {
     runAgentImpl = async () => ({})
   })
 
-  it('initialises with 1 supervisor and 3 workers', async () => {
-    const { createAgentPool } = await import('../server/agentPool.ts')
-    const pool = await createAgentPool()
+  it('initializes with 1 supervisor and 3 workers', async () => {
+    const pool = await makePool()
     const state = pool.getPool()
 
     expect(state).toHaveLength(4)
@@ -87,30 +83,22 @@ describe('agentPool', () => {
     expect(workers.map((w) => w.id).sort()).toEqual(['worker-0', 'worker-1', 'worker-2'])
   })
 
-  it('initialises all agents with idle status', async () => {
-    const { createAgentPool } = await import('../server/agentPool.ts')
-    const pool = await createAgentPool()
-    const state = pool.getPool()
-
-    for (const agent of state) {
+  it('initializes all agents with idle status', async () => {
+    const pool = await makePool()
+    for (const agent of pool.getPool()) {
       expect(agent.status).toBe('idle')
     }
   })
 
-  it('initialises all agents with undefined sessionId', async () => {
-    const { createAgentPool } = await import('../server/agentPool.ts')
-    const pool = await createAgentPool()
-    const state = pool.getPool()
-
-    for (const agent of state) {
+  it('initializes all agents with undefined sessionId', async () => {
+    const pool = await makePool()
+    for (const agent of pool.getPool()) {
       expect(agent.sessionId).toBeUndefined()
     }
   })
 
   it('registers NATS subscriptions for all four agent topics', async () => {
-    const { createAgentPool } = await import('../server/agentPool.ts')
-    await createAgentPool()
-
+    await makePool()
     const topics = mockSubscriptions.map((s) => s.topic).sort()
     expect(topics).toEqual(['epik.supervisor', 'epik.worker.0', 'epik.worker.1', 'epik.worker.2'])
   })
@@ -122,20 +110,17 @@ describe('agentPool', () => {
         resolveTurn = () => resolve({})
       })
 
-    const { createAgentPool } = await import('../server/agentPool.ts')
-    const pool = await createAgentPool()
+    const pool = await makePool()
 
     expect(pool.getPool().find((w) => w.id === 'supervisor')?.status).toBe('idle')
 
     triggerNatsMessage('epik.supervisor', 'hello supervisor')
-
-    // Give the event loop a tick to process
-    await new Promise((r) => setTimeout(r, 10))
+    await tick()
 
     expect(pool.getPool().find((w) => w.id === 'supervisor')?.status).toBe('busy')
 
     resolveTurn!()
-    await new Promise((r) => setTimeout(r, 10))
+    await tick()
 
     expect(pool.getPool().find((w) => w.id === 'supervisor')?.status).toBe('idle')
   })
@@ -147,18 +132,17 @@ describe('agentPool', () => {
         resolveTurn = () => resolve({})
       })
 
-    const { createAgentPool } = await import('../server/agentPool.ts')
-    const pool = await createAgentPool()
+    const pool = await makePool()
 
     expect(pool.getPool().find((w) => w.id === 'worker-1')?.status).toBe('idle')
 
     triggerNatsMessage('epik.worker.1', 'work on issue 5')
-    await new Promise((r) => setTimeout(r, 10))
+    await tick()
 
     expect(pool.getPool().find((w) => w.id === 'worker-1')?.status).toBe('busy')
 
     resolveTurn!()
-    await new Promise((r) => setTimeout(r, 10))
+    await tick()
 
     expect(pool.getPool().find((w) => w.id === 'worker-1')?.status).toBe('idle')
   })
@@ -166,18 +150,17 @@ describe('agentPool', () => {
   it('broadcasts AgentEvents to registered listeners', async () => {
     const capturedEvents: Array<{ agentId: AgentId; event: AgentEvent }> = []
 
-    runAgentImpl = async (opts: RunAgentOpts) => {
+    runAgentImpl = async (opts: RunAgentOptions) => {
       opts.send({ kind: 'text_delta', text: 'hello' })
       opts.send({ kind: 'turn_end' })
       return {}
     }
 
-    const { createAgentPool } = await import('../server/agentPool.ts')
-    const pool = await createAgentPool()
+    const pool = await makePool()
     pool.registerListener((agentId, event) => capturedEvents.push({ agentId, event }))
 
     triggerNatsMessage('epik.supervisor', 'start')
-    await new Promise((r) => setTimeout(r, 50))
+    await tick(50)
 
     expect(capturedEvents).toContainEqual({
       agentId: 'supervisor',
@@ -190,13 +173,12 @@ describe('agentPool', () => {
   })
 
   it('broadcasts events to all registered listeners', async () => {
-    runAgentImpl = async (opts: RunAgentOpts) => {
+    runAgentImpl = async (opts: RunAgentOptions) => {
       opts.send({ kind: 'turn_end' })
       return {}
     }
 
-    const { createAgentPool } = await import('../server/agentPool.ts')
-    const pool = await createAgentPool()
+    const pool = await makePool()
 
     const results1: AgentEvent[] = []
     const results2: AgentEvent[] = []
@@ -204,43 +186,41 @@ describe('agentPool', () => {
     pool.registerListener((_id, event) => results2.push(event))
 
     triggerNatsMessage('epik.worker.0', 'work')
-    await new Promise((r) => setTimeout(r, 50))
+    await tick(50)
 
     expect(results1).toContainEqual({ kind: 'turn_end' })
     expect(results2).toContainEqual({ kind: 'turn_end' })
   })
 
   it('unregisters a listener when the returned function is called', async () => {
-    runAgentImpl = async (opts: RunAgentOpts) => {
+    runAgentImpl = async (opts: RunAgentOptions) => {
       opts.send({ kind: 'turn_end' })
       return {}
     }
 
-    const { createAgentPool } = await import('../server/agentPool.ts')
-    const pool = await createAgentPool()
+    const pool = await makePool()
 
     const results: AgentEvent[] = []
     const unregister = pool.registerListener((_id, event) => results.push(event))
     unregister()
 
     triggerNatsMessage('epik.supervisor', 'go')
-    await new Promise((r) => setTimeout(r, 50))
+    await tick(50)
 
     expect(results).toHaveLength(0)
   })
 
   it('injectMessage triggers runAgent for the specified agent', async () => {
     const prompts: string[] = []
-    runAgentImpl = async (opts: RunAgentOpts) => {
+    runAgentImpl = async (opts: RunAgentOptions) => {
       prompts.push(opts.prompt)
       return {}
     }
 
-    const { createAgentPool } = await import('../server/agentPool.ts')
-    const pool = await createAgentPool()
+    const pool = await makePool()
 
     pool.injectMessage('worker-2', 'injected text')
-    await new Promise((r) => setTimeout(r, 50))
+    await tick(50)
 
     expect(prompts).toContain('injected text')
   })
@@ -248,14 +228,13 @@ describe('agentPool', () => {
   it('injectMessage broadcasts an inject event to listeners', async () => {
     runAgentImpl = async () => ({})
 
-    const { createAgentPool } = await import('../server/agentPool.ts')
-    const pool = await createAgentPool()
+    const pool = await makePool()
 
     const events: Array<{ agentId: AgentId; event: AgentEvent }> = []
     pool.registerListener((agentId, event) => events.push({ agentId, event }))
 
     pool.injectMessage('worker-0', 'injected text')
-    await new Promise((r) => setTimeout(r, 50))
+    await tick(50)
 
     expect(events).toContainEqual({
       agentId: 'worker-0',
@@ -267,7 +246,7 @@ describe('agentPool', () => {
     const interrupted: string[] = []
 
     // runAgentImpl is long-running; it calls onInterruptReady immediately, then waits
-    runAgentImpl = (opts: RunAgentOpts) =>
+    runAgentImpl = (opts: RunAgentOptions) =>
       new Promise<{ interrupt?: () => void }>((resolve) => {
         // Expose interrupt handle immediately
         opts.onInterruptReady?.(() => {
@@ -277,31 +256,29 @@ describe('agentPool', () => {
         // Turn would normally run for a long time; resolve above handles it
       })
 
-    const { createAgentPool } = await import('../server/agentPool.ts')
-    const pool = await createAgentPool()
+    const pool = await makePool()
 
     // Start a turn on worker-2
     triggerNatsMessage('epik.worker.2', 'start work')
-    await new Promise((r) => setTimeout(r, 10))
+    await tick()
 
     // Interrupt while busy
     pool.interrupt('worker-2')
-    await new Promise((r) => setTimeout(r, 10))
+    await tick()
 
     expect(interrupted).toContain('worker-2')
   })
 
   it('stores the sessionId returned by onSessionId callback', async () => {
-    runAgentImpl = async (opts: RunAgentOpts) => {
+    runAgentImpl = async (opts: RunAgentOptions) => {
       opts.onSessionId('session-abc-123')
       return {}
     }
 
-    const { createAgentPool } = await import('../server/agentPool.ts')
-    const pool = await createAgentPool()
+    const pool = await makePool()
 
     triggerNatsMessage('epik.supervisor', 'go')
-    await new Promise((r) => setTimeout(r, 50))
+    await tick(50)
 
     const supervisor = pool.getPool().find((w) => w.id === 'supervisor')
     expect(supervisor?.sessionId).toBe('session-abc-123')
@@ -309,20 +286,19 @@ describe('agentPool', () => {
 
   it('reuses sessionId on subsequent turns for the same agent', async () => {
     const capturedSessionIds: Array<string | undefined> = []
-    runAgentImpl = async (opts: RunAgentOpts) => {
+    runAgentImpl = async (opts: RunAgentOptions) => {
       capturedSessionIds.push(opts.sessionId)
       opts.onSessionId('sess-xyz')
       return {}
     }
 
-    const { createAgentPool } = await import('../server/agentPool.ts')
-    const pool = await createAgentPool()
+    const pool = await makePool()
 
     triggerNatsMessage('epik.supervisor', 'first message')
-    await new Promise((r) => setTimeout(r, 50))
+    await tick(50)
 
     triggerNatsMessage('epik.supervisor', 'second message')
-    await new Promise((r) => setTimeout(r, 50))
+    await tick(50)
 
     expect(capturedSessionIds[0]).toBeUndefined()
     expect(capturedSessionIds[1]).toBe('sess-xyz')

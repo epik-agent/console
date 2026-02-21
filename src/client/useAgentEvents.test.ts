@@ -285,7 +285,7 @@ describe('useAgentEvents', () => {
     expect(() => unmount()).not.toThrow()
   })
 
-  it('silently ignores messages with an unrecognised type', () => {
+  it('silently ignores messages with an unrecognized type', () => {
     const { result } = renderHook(() => useAgentEvents())
     const ws = MockWebSocket.instances[0]
 

@@ -13,7 +13,7 @@
  * The HTTP port is read from the `PORT` environment variable, defaulting to
  * `3001` for local development compatibility.
  *
- * The module also initialises the agent pool on startup and wires NATS
+ * The module also initializes the agent pool on startup and wires NATS
  * pub/sub to agent turn execution.
  */
 import express from 'express'
@@ -53,7 +53,7 @@ export const wss = new WebSocketServer({ server, path: '/ws' })
 // Agent pool initialisation
 // ---------------------------------------------------------------------------
 
-/** Promise that resolves to the fully initialised {@link AgentPool}. */
+/** Promise that resolves to the fully initialized {@link AgentPool}. */
 const poolPromise = createAgentPool()
 
 // ---------------------------------------------------------------------------

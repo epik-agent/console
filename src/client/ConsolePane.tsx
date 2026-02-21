@@ -74,7 +74,7 @@ const assistantTextStyle: React.CSSProperties = { lineHeight: 1.6, fontSize: '15
  *
  * @param name    - Tool name (e.g. `"Bash"`, `"Read"`).
  * @param input   - Tool input payload as received from the agent.
- * @param palette - Active colour palette for theming.
+ * @param palette - Active color palette for theming.
  */
 export function ToolUseCard({
   name,
@@ -113,7 +113,7 @@ export function ToolUseCard({
  * card is collapsed by default.
  *
  * @param content - Raw tool result content (string or structured value).
- * @param palette - Active colour palette for theming.
+ * @param palette - Active color palette for theming.
  */
 export function ToolResultCard({ content, palette }: { content: unknown; palette: Palette }) {
   const s = makeToolStyles(palette)
@@ -138,9 +138,9 @@ export function ToolResultCard({ content, palette }: { content: unknown; palette
 
 /**
  * Horizontal rule inserted into the chat history when the SDK compacts the
- * context window, so the user can see where earlier conversation was summarised.
+ * context window, so the user can see where earlier conversation was summarized.
  *
- * @param palette - Active colour palette for theming.
+ * @param palette - Active color palette for theming.
  */
 function CompactionMarker({ palette }: { palette: Palette }) {
   return (
@@ -169,7 +169,7 @@ function CompactionMarker({ palette }: { palette: Palette }) {
  * array or palette reference changes.
  *
  * @param blocks  - Content blocks for the assistant message.
- * @param palette - Active colour palette for theming.
+ * @param palette - Active color palette for theming.
  */
 const AssistantBlocks = memo(function AssistantBlocks({
   blocks,
@@ -223,7 +223,7 @@ interface ConsolePaneProps {
   onSend: (text: string) => void
   /** Called when the user presses Escape to interrupt an in-progress turn. */
   onInterrupt: () => void
-  /** Active colour theme; defaults to `'dark'`. */
+  /** Active color theme; defaults to `'dark'`. */
   theme?: Theme
 }
 
@@ -358,7 +358,7 @@ export default function ConsolePane(props: ConsolePaneProps) {
 /**
  * Returns the style map for the main pane layout, derived from `p`.
  *
- * @param p - Active colour palette.
+ * @param p - Active color palette.
  */
 function makeStyles(p: Palette): Record<string, React.CSSProperties> {
   return {
@@ -400,7 +400,7 @@ function makeStyles(p: Palette): Record<string, React.CSSProperties> {
 /**
  * Returns the style map for tool-use and tool-result cards, derived from `p`.
  *
- * @param p - Active colour palette.
+ * @param p - Active color palette.
  */
 function makeToolStyles(p: Palette): Record<string, React.CSSProperties> {
   return {

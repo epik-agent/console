@@ -30,7 +30,7 @@ export function useAgentIssueMap(
     const map: Partial<Record<AgentId, number>> = {}
 
     for (const [agentId, agentEvents] of Object.entries(events) as [AgentId, AgentEvent[]][]) {
-      let currentIssue: number | undefined
+      let currentIssue: number | undefined = undefined
 
       for (const event of agentEvents) {
         if (event.kind === 'inject') {
