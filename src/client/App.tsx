@@ -8,6 +8,7 @@ import {
 } from 'react'
 import AgentTabs from './AgentTabs'
 import IssueGraph from './IssueGraph'
+import { themes } from './theme'
 import { useAgentEvents } from './useAgentEvents'
 import type { IssueGraph as IssueGraphType } from './types'
 
@@ -27,6 +28,8 @@ function repoFromUrl(): string {
 
 /** Sentinel empty graph used before the first successful `/api/issues` fetch. */
 const EMPTY_GRAPH: IssueGraphType = { nodes: [] }
+
+const palette = themes.dark
 
 // ---------------------------------------------------------------------------
 // App
@@ -91,7 +94,7 @@ export default function App() {
   return (
     <div style={rootStyle}>
       {/* Toolbar */}
-      <div style={toolbarStyle}>
+      <div style={toolbarStyle} aria-label="toolbar">
         <form onSubmit={handleRepoSubmit} style={formStyle}>
           <input
             style={repoInputStyle}
@@ -130,8 +133,8 @@ const rootStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   height: '100vh',
-  background: '#111827',
-  color: '#f9fafb',
+  background: palette.bg.root,
+  color: palette.text.primary,
   fontFamily: 'system-ui, sans-serif',
 }
 
@@ -140,8 +143,8 @@ const toolbarStyle: CSSProperties = {
   alignItems: 'center',
   gap: '8px',
   padding: '8px 16px',
-  background: '#1f2937',
-  borderBottom: '1px solid #374151',
+  background: palette.bg.bar,
+  borderBottom: `1px solid ${palette.border.strong}`,
   flexShrink: 0,
 }
 
@@ -154,30 +157,30 @@ const formStyle: CSSProperties = {
 const repoInputStyle: CSSProperties = {
   flex: 1,
   padding: '6px 12px',
-  background: '#111827',
-  border: '1px solid #374151',
+  background: palette.bg.input,
+  border: `1px solid ${palette.border.strong}`,
   borderRadius: '6px',
-  color: '#f9fafb',
+  color: palette.text.primary,
   fontSize: '14px',
   outline: 'none',
 }
 
 const secondaryButtonStyle: CSSProperties = {
   padding: '6px 14px',
-  background: '#374151',
+  background: palette.bg.inputBar,
   border: 'none',
   borderRadius: '6px',
-  color: '#f9fafb',
+  color: palette.text.secondary,
   cursor: 'pointer',
   fontSize: '14px',
 }
 
 const startButtonStyle: CSSProperties = {
   padding: '6px 18px',
-  background: '#3b82f6',
+  background: palette.accent,
   border: 'none',
   borderRadius: '6px',
-  color: '#fff',
+  color: palette.text.primary,
   cursor: 'pointer',
   fontSize: '14px',
   fontWeight: 600,
@@ -186,7 +189,7 @@ const startButtonStyle: CSSProperties = {
 const topPaneStyle: CSSProperties = {
   flex: 1,
   minHeight: 0,
-  borderBottom: '1px solid #374151',
+  borderBottom: `1px solid ${palette.border.default}`,
 }
 
 const bottomPaneStyle: CSSProperties = {

@@ -2,7 +2,16 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import AgentTabs from './AgentTabs'
+import { themes } from './theme'
 import type { AgentEvent, AgentId, PoolState } from './types'
+
+/** Convert a hex color like "#a0707a" to "rgb(160, 112, 122)" for jsdom comparison. */
+function hexToRgb(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgb(${r}, ${g}, ${b})`
+}
 
 const pool: PoolState = [
   { id: 'supervisor', role: 'supervisor', status: 'idle', sessionId: undefined },
@@ -90,6 +99,58 @@ describe('AgentTabs', () => {
     fireEvent.keyDown(pane, { key: 'Escape' })
 
     expect(onInterrupt).toHaveBeenCalledWith('supervisor')
+  })
+
+  describe('tab strip contrast — colors from theme palette', () => {
+    it('tab strip background uses theme bar color', () => {
+      const { container } = render(
+        <AgentTabs pool={pool} events={events} onSend={noop} onInterrupt={noop} />,
+      )
+      const tablist = container.querySelector('[role="tablist"]') as HTMLElement
+      expect(tablist.style.background).toBe(hexToRgb(themes.dark.bg.bar))
+    })
+
+    it('tab strip border uses theme border default color', () => {
+      const { container } = render(
+        <AgentTabs pool={pool} events={events} onSend={noop} onInterrupt={noop} />,
+      )
+      const tablist = container.querySelector('[role="tablist"]') as HTMLElement
+      expect(tablist.style.borderBottomColor).toBe(hexToRgb(themes.dark.border.default))
+    })
+
+    it('active tab background uses theme root color', () => {
+      const { container } = render(
+        <AgentTabs pool={pool} events={events} onSend={noop} onInterrupt={noop} />,
+      )
+      const activeTab = container.querySelector('[role="tab"][aria-selected="true"]') as HTMLElement
+      expect(activeTab.style.background).toBe(hexToRgb(themes.dark.bg.root))
+    })
+
+    it('active tab bottom border uses theme accent color', () => {
+      const { container } = render(
+        <AgentTabs pool={pool} events={events} onSend={noop} onInterrupt={noop} />,
+      )
+      const activeTab = container.querySelector('[role="tab"][aria-selected="true"]') as HTMLElement
+      expect(activeTab.style.borderBottomColor).toBe(hexToRgb(themes.dark.accent))
+    })
+
+    it('active tab text uses theme primary text color', () => {
+      const { container } = render(
+        <AgentTabs pool={pool} events={events} onSend={noop} onInterrupt={noop} />,
+      )
+      const activeTab = container.querySelector('[role="tab"][aria-selected="true"]') as HTMLElement
+      expect(activeTab.style.color).toBe(hexToRgb(themes.dark.text.primary))
+    })
+
+    it('inactive tab text uses theme muted text color', () => {
+      const { container } = render(
+        <AgentTabs pool={pool} events={events} onSend={noop} onInterrupt={noop} />,
+      )
+      const inactiveTab = container.querySelector(
+        '[role="tab"][aria-selected="false"]',
+      ) as HTMLElement
+      expect(inactiveTab.style.color).toBe(hexToRgb(themes.dark.text.muted))
+    })
   })
 
   it('falls back to empty array when events[id] is undefined', () => {

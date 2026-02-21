@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import ConsolePane from './ConsolePane'
+import { themes } from './theme'
 import type { AgentEvent, AgentId, PoolState, WorkerState } from './types'
+
+const palette = themes.dark
 
 // ---------------------------------------------------------------------------
 // Types
@@ -77,8 +80,8 @@ function StatusBadge({ status }: { status: 'idle' | 'busy' }) {
         borderRadius: '10px',
         fontSize: '11px',
         fontWeight: 600,
-        background: isBusy ? '#f59e0b' : '#374151',
-        color: isBusy ? '#000' : '#9ca3af',
+        background: isBusy ? '#f59e0b' : palette.bg.inputBar,
+        color: isBusy ? '#000' : palette.text.muted,
         marginLeft: '6px',
       }}
     >
@@ -108,8 +111,8 @@ export default function AgentTabs({ pool, events, onSend, onInterrupt }: AgentTa
         role="tablist"
         style={{
           display: 'flex',
-          background: '#1f2937',
-          borderBottom: '1px solid #374151',
+          background: palette.bg.bar,
+          borderBottom: `1px solid ${palette.border.default}`,
           flexShrink: 0,
         }}
       >
@@ -126,10 +129,12 @@ export default function AgentTabs({ pool, events, onSend, onInterrupt }: AgentTa
                 display: 'flex',
                 alignItems: 'center',
                 padding: '8px 16px',
-                background: isActive ? '#111827' : 'transparent',
+                background: isActive ? palette.bg.root : 'transparent',
                 border: 'none',
-                borderBottom: isActive ? '2px solid #3b82f6' : '2px solid transparent',
-                color: isActive ? '#f9fafb' : '#9ca3af',
+                borderBottom: isActive
+                  ? `2px solid ${palette.accent}`
+                  : '2px solid transparent',
+                color: isActive ? palette.text.primary : palette.text.muted,
                 cursor: 'pointer',
                 fontSize: '13px',
                 fontWeight: isActive ? 600 : 400,
