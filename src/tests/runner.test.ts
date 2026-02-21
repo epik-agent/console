@@ -8,7 +8,7 @@ import type { AgentEvent } from '../client/types.ts'
 /** Build a minimal async iterable from an array of SDK message objects. */
 function makeIterator(messages: unknown[]): AsyncIterable<unknown> & { interrupt?: () => void } {
   let interrupted = false
-  const iter: AsyncIterable<unknown> & { interrupt?: () => void } = {
+  return {
     [Symbol.asyncIterator]() {
       let i = 0
       return {
@@ -22,11 +22,10 @@ function makeIterator(messages: unknown[]): AsyncIterable<unknown> & { interrupt
       interrupted = true
     },
   }
-  return iter
 }
 
 /** No-op mock for createSdkMcpServer and tool used in all vi.doMock calls. */
-const sdkMockBase = {
+const sdkMockBase: Record<string, (...args: unknown[]) => unknown> = {
   createSdkMcpServer: () => ({ type: 'sdk', name: 'nats', instance: {} }),
   tool: () => ({}),
 }
