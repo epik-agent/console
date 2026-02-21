@@ -1,9 +1,17 @@
 /**
- * Express + WebSocket server entrypoint (port 3001).
+ * Express + WebSocket server entrypoint.
  *
  * Exposes the REST API described in ARCHITECTURE.md and a `/ws` WebSocket
  * endpoint that streams {@link ServerMessage} envelopes to all connected
  * browsers.
+ *
+ * In production (Docker) the server also serves the Vite-built frontend
+ * from the `dist/` directory at the project root. In development, Vite's
+ * own dev server handles the frontend at `:5173` while this server runs at
+ * `:3001`.
+ *
+ * The HTTP port is read from the `PORT` environment variable, defaulting to
+ * `3001` for local development compatibility.
  *
  * The module also initialises the agent pool on startup and wires NATS
  * pub/sub to agent turn execution.
@@ -11,6 +19,9 @@
 import express from 'express'
 import { WebSocketServer, WebSocket } from 'ws'
 import { createServer } from 'http'
+import { existsSync } from 'fs'
+import { resolve } from 'path'
+import { fileURLToPath } from 'url'
 import type { AgentId, ServerMessage } from '../client/types.ts'
 import { createAgentPool } from './agentPool.ts'
 import { getNatsConnection, TOPIC_SUPERVISOR } from './nats.ts'
@@ -18,6 +29,23 @@ import { loadIssueGraph } from './github.ts'
 
 export const app = express()
 app.use(express.json())
+
+// ---------------------------------------------------------------------------
+// Static file serving (production / Docker)
+//
+// When the Vite frontend has been built (`npm run build`), the compiled assets
+// land in `dist/` at the project root. We serve them here so a single Docker
+// container hosts both the API and the UI.
+//
+// In local development this block is a no-op: `dist/` does not exist and the
+// Vite dev server handles the frontend separately.
+// ---------------------------------------------------------------------------
+
+const distDir = resolve(fileURLToPath(import.meta.url), '../../../dist')
+
+if (existsSync(distDir)) {
+  app.use(express.static(distDir))
+}
 
 export const server = createServer(app)
 /** WebSocket server mounted at `/ws` on the same HTTP server as the REST API. */
@@ -58,7 +86,21 @@ app.get('/api/issues', async (req, res) => {
     const graph = await loadIssueGraph(owner, repoName)
     res.json(graph)
   } catch (err) {
-    res.status(500).json({ error: String(err) })
+    const message = String(err)
+    // Provide a clear error when GitHub credentials are absent rather than
+    // surfacing a raw gh-CLI error message.
+    if (
+      message.includes('401') ||
+      message.includes('Bad credentials') ||
+      message.includes('GH_TOKEN') ||
+      message.includes('authentication')
+    ) {
+      res.status(500).json({
+        error: 'GitHub token not configured. Set the GH_TOKEN environment variable.',
+      })
+    } else {
+      res.status(500).json({ error: message })
+    }
   }
 })
 
@@ -163,7 +205,7 @@ wss.on('connection', async (ws) => {
 // ---------------------------------------------------------------------------
 
 if (process.argv[1] === new URL(import.meta.url).pathname) {
-  const PORT = 3001
+  const PORT = parseInt(process.env['PORT'] ?? '3001', 10)
   server.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`)
   })

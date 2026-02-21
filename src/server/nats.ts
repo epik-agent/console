@@ -6,6 +6,10 @@
  * `nats.connect()` directly, so that the process shares a single underlying
  * TCP connection.
  *
+ * The NATS server URL is read from the `NATS_URL` environment variable,
+ * defaulting to `nats://localhost:4222` for local development. When running
+ * inside Docker, set `NATS_URL=nats://nats:4222` to reach the NATS container.
+ *
  * The module installs a `SIGINT` handler that drains the connection before
  * the process exits, ensuring in-flight messages are not dropped.
  */
@@ -30,11 +34,13 @@ let connection: NatsConnection | null = null
  * Returns the shared NATS connection, creating it if it does not yet exist or
  * has been closed.
  *
- * Connects to `nats://localhost:4222` by default.
+ * Connects to the URL given by the `NATS_URL` environment variable, or
+ * `nats://localhost:4222` if the variable is not set.
  */
 export async function getNatsConnection(): Promise<NatsConnection> {
   if (connection === null || connection.isClosed()) {
-    connection = await connect({ servers: 'nats://localhost:4222' })
+    const servers = process.env['NATS_URL'] ?? 'nats://localhost:4222'
+    connection = await connect({ servers })
   }
   return connection
 }

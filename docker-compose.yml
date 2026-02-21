@@ -1,0 +1,30 @@
+# docker-compose.yml
+#
+# Runs the full Builder stack:
+#   - nats   — NATS messaging server
+#   - app    — Express server serving both the REST API and the Vite frontend
+#
+# Usage:
+#   docker compose up                          # start without GitHub access
+#   GH_TOKEN=ghp_... docker compose up         # start with full GitHub access
+#
+# The dashboard is served at http://localhost:5173
+services:
+  nats:
+    image: nats:latest
+    restart: unless-stopped
+
+  app:
+    build: .
+    ports:
+      - '5173:5173'
+    environment:
+      # Relay GH_TOKEN from the host shell into the container.
+      # If not set the app still starts; loading a repo will return a clear
+      # "GitHub token not configured" error rather than crashing.
+      - GH_TOKEN=${GH_TOKEN:-}
+      - NATS_URL=nats://nats:4222
+      - PORT=5173
+    depends_on:
+      - nats
+    restart: unless-stopped

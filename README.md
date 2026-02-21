@@ -1,73 +1,70 @@
-# React + TypeScript + Vite
+# Builder
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Builder is a multi-agent build console. Give it a GitHub repository with open
+issues and it autonomously implements them using a team of Claude Code agents
+coordinated over NATS.
 
-Currently, two official plugins are available:
+## Quick start with Docker
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The easiest way to run Builder is with Docker Compose, which starts NATS and
+the application server automatically.
 
-## React Compiler
+### Without GitHub access
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+docker compose up
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open http://localhost:5173 in your browser. The dashboard loads and you can
+see the empty issue graph and agent console. Trying to load a repository will
+show a clear error: _"GitHub token not configured"_.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### With GitHub access
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+GH_TOKEN=ghp_your_token_here docker compose up
 ```
+
+Open http://localhost:5173 and enter `epik-agent/builder` (or any
+`owner/repo`) in the toolbar. Click **Load** to fetch the issue graph.
+
+### What you should see
+
+- The toolbar at the top with a repository input field and **Load** / **Start** buttons.
+- The issue dependency graph in the top half of the screen (empty until a repo is loaded).
+- The agent console tabs (Supervisor, Worker 0/1/2) in the bottom half.
+- After loading a repo, coloured nodes appear in the graph — one per open issue.
+
+## Local development
+
+### Prerequisites
+
+- Node.js ≥ 20
+- `nats-server` binary on PATH (`brew install nats-server` on macOS)
+- `gh` CLI authenticated (`gh auth login`)
+
+### Start
+
+```bash
+nats-server &        # start NATS in the background
+npm install
+npm run dev          # Vite on :5173, Express on :3001
+```
+
+Open http://localhost:5173/?repo=owner/repo.
+
+### Scripts
+
+| Script           | Description                              |
+| ---------------- | ---------------------------------------- |
+| `npm run dev`    | Vite dev server + Express (concurrently) |
+| `npm run server` | Express server only (tsx watch)          |
+| `npm run build`  | TypeScript + Vite production build       |
+| `npm run lint`   | ESLint                                   |
+| `npm run format` | Prettier                                 |
+| `npm test`       | Vitest unit tests                        |
+
+## Architecture
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full system design, data types,
+NATS topics, and REST API reference.
