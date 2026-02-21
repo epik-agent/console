@@ -34,71 +34,59 @@ export const sdkMockBase: Record<string, (...args: unknown[]) => unknown> = {
 }
 
 // ---------------------------------------------------------------------------
-// runAgent helpers
-// ---------------------------------------------------------------------------
-
-/** Default runAgent options — override only what each test needs. */
-export function makeRunAgentOpts(
-  overrides: Partial<RunAgentOptions> = {},
-): RunAgentOptions {
-  return {
-    config: { model: 'claude-sonnet-4-6', cwd: '/tmp', systemPrompt: undefined },
-    sessionId: undefined,
-    prompt: 'test',
-    send: () => {},
-    onSessionId: () => {},
-    natsClient: makeNatsClient() as unknown as import('nats').NatsConnection,
-    ...overrides,
-  }
-}
-
-// ---------------------------------------------------------------------------
-// NATS client mock
-// ---------------------------------------------------------------------------
-
-/** Build a minimal mock NATS client. */
-export function makeNatsClient() {
-  return {
-    publish: vi.fn(),
-    subscribe: vi.fn(() => ({ unsubscribe: vi.fn() })),
-  }
-}
-
-// ---------------------------------------------------------------------------
 // collect helper
 // ---------------------------------------------------------------------------
 
+export type CollectOptions = {
+  /** SDK messages to feed through the iterator. */
+  messages: unknown[]
+  /** Overrides applied on top of the default RunAgentOptions. */
+  opts?: Partial<RunAgentOptions>
+  /**
+   * Replace the default `query` implementation.  Receives the options object
+   * that runAgent passes to query so tests can inspect it, and must return an
+   * async iterable (use makeIterator([]) for an empty stream).
+   */
+  query?: (opts: unknown) => ReturnType<typeof makeIterator>
+  /** Intercept nc.publish calls (topic, decoded message text). */
+  onPublish?: (topic: string, message: string) => void
+}
+
 /**
  * Run a mocked runAgent through the given SDK messages and collect all emitted
- * AgentEvents.  Optionally intercepts nc.publish calls via the natsPublish hook.
+ * AgentEvents.  Returns both the events array and the runAgent return value so
+ * tests can inspect result.interrupt etc.
  */
-export async function collect(
-  messages: unknown[],
-  natsPublish?: (topic: string, message: string) => void,
-): Promise<AgentEvent[]> {
+export async function collect({
+  messages,
+  opts = {},
+  query,
+  onPublish,
+}: CollectOptions): Promise<{ events: AgentEvent[]; result: { interrupt?: () => void } }> {
   const { runAgent } = await import('../server/runner.ts')
 
   const events: AgentEvent[] = []
   const mockNatsClient = {
     publish: vi.fn((topic: string, data: unknown) => {
       const text = typeof data === 'string' ? data : new TextDecoder().decode(data as Uint8Array)
-      natsPublish?.(topic, text)
+      onPublish?.(topic, text)
     }),
   }
 
   vi.doMock('@anthropic-ai/claude-agent-sdk', () => ({
     ...sdkMockBase,
-    query: () => makeIterator(messages),
+    query: query ?? (() => makeIterator(messages)),
   }))
 
-  await runAgent({
+  const result = await runAgent({
     config: { model: 'claude-sonnet-4-6', cwd: '/tmp', systemPrompt: undefined },
     sessionId: undefined,
-    prompt: 'test prompt',
+    prompt: 'test',
     send: (e) => events.push(e),
     onSessionId: () => {},
     natsClient: mockNatsClient as unknown as import('nats').NatsConnection,
+    ...opts,
   })
 
-  return events
+  return { events, result }
 }
