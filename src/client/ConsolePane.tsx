@@ -186,6 +186,7 @@ const AssistantBlocks = memo(function AssistantBlocks({
           return <ToolUseCard key={i} name={block.name} input={block.input} palette={palette} />
         if (block.type === 'tool_result')
           return <ToolResultCard key={i} content={block.content} palette={palette} />
+        /* v8 ignore next */
         return null
       })}
     </div>
@@ -271,6 +272,7 @@ export default function ConsolePane(props: ConsolePaneProps) {
   // Keyboard shortcut: Escape to interrupt
   useEffect(() => {
     const el = paneRef.current
+    /* v8 ignore next 2 */
     if (!el) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && busy) {

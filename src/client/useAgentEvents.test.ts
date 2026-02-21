@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAgentEvents } from './useAgentEvents'
-import type { AgentId, PoolState, ServerMessage } from './types'
+import type { AgentEvent, AgentId, PoolState, ServerMessage } from './types'
 
 // ---------------------------------------------------------------------------
 // Mock WebSocket
@@ -211,5 +211,114 @@ describe('useAgentEvents', () => {
     })
 
     expect(MockWebSocket.instances).toHaveLength(2)
+  })
+
+  it('silently ignores malformed JSON messages', () => {
+    const { result } = renderHook(() => useAgentEvents())
+    const ws = MockWebSocket.instances[0]
+
+    act(() => {
+      ws.open()
+      ws.receive('not valid json }{')
+    })
+
+    // Pool and events should remain at their initial values
+    expect(result.current.pool).toEqual([])
+    expect(result.current.events['supervisor']).toHaveLength(0)
+  })
+
+  it('does not reconnect after unmount', () => {
+    const { unmount } = renderHook(() => useAgentEvents())
+    const ws0 = MockWebSocket.instances[0]
+
+    act(() => {
+      ws0.open()
+    })
+
+    // Unmount first, then close the socket
+    unmount()
+
+    act(() => {
+      ws0.close()
+    })
+
+    // Advance time — no reconnect should happen
+    act(() => {
+      vi.advanceTimersByTime(2000)
+    })
+
+    expect(MockWebSocket.instances).toHaveLength(1)
+  })
+
+  it('cancels pending reconnect timer on unmount', () => {
+    const { unmount } = renderHook(() => useAgentEvents())
+    const ws0 = MockWebSocket.instances[0]
+
+    act(() => {
+      ws0.open()
+      ws0.close()
+    })
+
+    // There should be a pending reconnect timer now; unmounting should cancel it
+    unmount()
+
+    act(() => {
+      vi.advanceTimersByTime(2000)
+    })
+
+    // Only the first WS should have been created
+    expect(MockWebSocket.instances).toHaveLength(1)
+  })
+
+  it('unmounts cleanly when no reconnect timer is pending (no-op branch)', () => {
+    // When the socket never closes, there's no pending reconnect timer.
+    // Unmounting should still work correctly without throwing.
+    const { unmount } = renderHook(() => useAgentEvents())
+    const ws0 = MockWebSocket.instances[0]
+
+    act(() => {
+      ws0.open()
+      // Do NOT close the socket — no reconnect timer is set
+    })
+
+    // Should not throw
+    expect(() => unmount()).not.toThrow()
+  })
+
+  it('silently ignores messages with an unrecognised type', () => {
+    const { result } = renderHook(() => useAgentEvents())
+    const ws = MockWebSocket.instances[0]
+
+    act(() => {
+      ws.open()
+      // Send a valid JSON object with an unknown type
+      ws.receive(JSON.stringify({ type: 'unknown_message', payload: 'something' }))
+    })
+
+    // State should remain unchanged
+    expect(result.current.pool).toEqual([])
+    expect(result.current.events['supervisor']).toHaveLength(0)
+  })
+
+  it('accumulates events for an unknown agentId using ?? [] fallback', () => {
+    const { result } = renderHook(() => useAgentEvents())
+    const ws = MockWebSocket.instances[0]
+
+    act(() => {
+      ws.open()
+    })
+
+    // Send an event for an agent ID not in the initial state — triggers the `?? []` fallback
+    const msg: ServerMessage = {
+      type: 'agent_event',
+      agentId: 'worker-99' as AgentId,
+      event: { kind: 'text_delta', text: 'surprise' },
+    }
+
+    act(() => {
+      ws.receive(JSON.stringify(msg))
+    })
+
+    expect((result.current.events as Record<string, AgentEvent[]>)['worker-99']).toHaveLength(1)
   })
 })

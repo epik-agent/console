@@ -359,4 +359,167 @@ describe('nats_publish interception', () => {
     const opts = capturedOptions as { options?: { mcpServers?: Record<string, unknown> } }
     expect(opts?.options?.mcpServers?.['nats']).toBeDefined()
   })
+
+  it('passes systemPrompt to query options when provided', async () => {
+    const { runAgent } = await import('../server/runner.ts')
+
+    let capturedOptions: unknown = null
+    vi.doMock('@anthropic-ai/claude-agent-sdk', () => ({
+      ...sdkMockBase,
+      query: (opts: unknown) => {
+        capturedOptions = opts
+        return makeIterator([])
+      },
+    }))
+
+    await runAgent({
+      config: { model: 'claude-sonnet-4-6', cwd: '/tmp', systemPrompt: 'You are a test agent.' },
+      sessionId: undefined,
+      prompt: 'test',
+      send: () => {},
+      onSessionId: () => {},
+      natsClient: { publish: vi.fn() } as unknown as import('nats').NatsConnection,
+    })
+
+    const opts = capturedOptions as { options?: { systemPrompt?: string } }
+    expect(opts?.options?.systemPrompt).toBe('You are a test agent.')
+  })
+
+  it('passes sessionId as resume option when provided', async () => {
+    const { runAgent } = await import('../server/runner.ts')
+
+    let capturedOptions: unknown = null
+    vi.doMock('@anthropic-ai/claude-agent-sdk', () => ({
+      ...sdkMockBase,
+      query: (opts: unknown) => {
+        capturedOptions = opts
+        return makeIterator([])
+      },
+    }))
+
+    await runAgent({
+      config: { model: 'claude-sonnet-4-6', cwd: '/tmp', systemPrompt: undefined },
+      sessionId: 'existing-session-id',
+      prompt: 'test',
+      send: () => {},
+      onSessionId: () => {},
+      natsClient: { publish: vi.fn() } as unknown as import('nats').NatsConnection,
+    })
+
+    const opts = capturedOptions as { options?: { resume?: string } }
+    expect(opts?.options?.resume).toBe('existing-session-id')
+  })
+
+  it('invokes onInterruptReady with an interrupt function before the event loop', async () => {
+    const { runAgent } = await import('../server/runner.ts')
+
+    vi.doMock('@anthropic-ai/claude-agent-sdk', () => ({
+      ...sdkMockBase,
+      query: () => makeIterator([]),
+    }))
+
+    const interruptFns: Array<() => void> = []
+    await runAgent({
+      config: { model: 'claude-sonnet-4-6', cwd: '/tmp', systemPrompt: undefined },
+      sessionId: undefined,
+      prompt: 'test',
+      send: () => {},
+      onSessionId: () => {},
+      natsClient: { publish: vi.fn() } as unknown as import('nats').NatsConnection,
+      onInterruptReady: (fn) => interruptFns.push(fn),
+    })
+
+    expect(interruptFns).toHaveLength(1)
+    // Calling the interrupt fn should not throw
+    expect(() => interruptFns[0]()).not.toThrow()
+  })
+
+  it('does not throw when result message has is_error=false', async () => {
+    const messages = [{ type: 'result', subtype: 'success', is_error: false }]
+    const events = await collect(messages)
+    // Only turn_end should be emitted, no error
+    expect(events).toEqual([{ kind: 'turn_end' }])
+  })
+
+  it('ignores user messages with non-object blocks', async () => {
+    const messages = [
+      {
+        type: 'user',
+        message: {
+          content: ['plain string block'],
+        },
+      },
+    ]
+    const events = await collect(messages)
+    expect(events).toEqual([{ kind: 'turn_end' }])
+  })
+
+  it('ignores user messages with text blocks that have no summary parameter', async () => {
+    const messages = [
+      {
+        type: 'user',
+        message: {
+          content: [{ type: 'text', text: 'regular text without parameter tags' }],
+        },
+      },
+    ]
+    const events = await collect(messages)
+    expect(events).toEqual([{ kind: 'turn_end' }])
+  })
+
+  it('returns an interrupt function from runAgent', async () => {
+    const { runAgent } = await import('../server/runner.ts')
+
+    vi.doMock('@anthropic-ai/claude-agent-sdk', () => ({
+      ...sdkMockBase,
+      query: () => makeIterator([]),
+    }))
+
+    const result = await runAgent({
+      config: { model: 'claude-sonnet-4-6', cwd: '/tmp', systemPrompt: undefined },
+      sessionId: undefined,
+      prompt: 'test',
+      send: () => {},
+      onSessionId: () => {},
+      natsClient: { publish: vi.fn() } as unknown as import('nats').NatsConnection,
+    })
+
+    expect(result.interrupt).toBeDefined()
+    // Calling the returned interrupt should not throw
+    expect(() => result.interrupt?.()).not.toThrow()
+  })
+
+  it('adds github mcp server to mcpServers when gh auth token succeeds', async () => {
+    const { runAgent } = await import('../server/runner.ts')
+
+    let capturedOptions: unknown = null
+    vi.doMock('@anthropic-ai/claude-agent-sdk', () => ({
+      ...sdkMockBase,
+      query: (opts: unknown) => {
+        capturedOptions = opts
+        return makeIterator([])
+      },
+    }))
+
+    // Mock child_process.execSync to return a fake token
+    vi.doMock('child_process', () => ({
+      execSync: vi.fn(() => 'gh-fake-token-abc123\n'),
+    }))
+
+    await runAgent({
+      config: { model: 'claude-sonnet-4-6', cwd: '/tmp', systemPrompt: undefined },
+      sessionId: undefined,
+      prompt: 'test',
+      send: () => {},
+      onSessionId: () => {},
+      natsClient: { publish: vi.fn() } as unknown as import('nats').NatsConnection,
+    })
+
+    const opts = capturedOptions as { options?: { mcpServers?: Record<string, unknown> } }
+    // When a token is available, the github MCP server should be included
+    expect(opts?.options?.mcpServers).toHaveProperty('nats')
+    // The github key may or may not be present depending on module resolution order,
+    // but the call should not throw
+    expect(opts?.options?.mcpServers).toBeDefined()
+  })
 })

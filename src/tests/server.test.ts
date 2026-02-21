@@ -106,10 +106,66 @@ describe('GET /api/issues', () => {
     expect(res.status).toBe(400)
   })
 
+  it('returns 400 when repo param is an empty string', async () => {
+    const res = await request(serverModule.app).get('/api/issues?repo=')
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 when repo does not contain a slash', async () => {
+    const res = await request(serverModule.app).get('/api/issues?repo=nodash')
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/owner\/repo/)
+  })
+
   it('returns 200 with IssueGraph JSON when repo is provided', async () => {
     const res = await request(serverModule.app).get('/api/issues?repo=owner/repo')
     expect(res.status).toBe(200)
     expect(res.body).toMatchObject({ nodes: expect.any(Array) })
+  })
+
+  it('returns 500 with a GitHub token message when loadIssueGraph rejects with 401', async () => {
+    const { loadIssueGraph } = await import('../server/github.ts')
+    vi.mocked(loadIssueGraph).mockRejectedValueOnce(new Error('Request failed with status 401'))
+
+    const res = await request(serverModule.app).get('/api/issues?repo=owner/repo')
+    expect(res.status).toBe(500)
+    expect(res.body.error).toMatch(/GH_TOKEN/)
+  })
+
+  it('returns 500 with a GitHub token message when loadIssueGraph rejects with Bad credentials', async () => {
+    const { loadIssueGraph } = await import('../server/github.ts')
+    vi.mocked(loadIssueGraph).mockRejectedValueOnce(new Error('Bad credentials'))
+
+    const res = await request(serverModule.app).get('/api/issues?repo=owner/repo')
+    expect(res.status).toBe(500)
+    expect(res.body.error).toMatch(/GH_TOKEN/)
+  })
+
+  it('returns 500 with a GitHub token message when loadIssueGraph rejects with GH_TOKEN error', async () => {
+    const { loadIssueGraph } = await import('../server/github.ts')
+    vi.mocked(loadIssueGraph).mockRejectedValueOnce(new Error('GH_TOKEN not set'))
+
+    const res = await request(serverModule.app).get('/api/issues?repo=owner/repo')
+    expect(res.status).toBe(500)
+    expect(res.body.error).toMatch(/GH_TOKEN/)
+  })
+
+  it('returns 500 with a GitHub token message when loadIssueGraph rejects with authentication error', async () => {
+    const { loadIssueGraph } = await import('../server/github.ts')
+    vi.mocked(loadIssueGraph).mockRejectedValueOnce(new Error('authentication required'))
+
+    const res = await request(serverModule.app).get('/api/issues?repo=owner/repo')
+    expect(res.status).toBe(500)
+    expect(res.body.error).toMatch(/GH_TOKEN/)
+  })
+
+  it('returns 500 with the raw error message for non-auth errors', async () => {
+    const { loadIssueGraph } = await import('../server/github.ts')
+    vi.mocked(loadIssueGraph).mockRejectedValueOnce(new Error('Network timeout'))
+
+    const res = await request(serverModule.app).get('/api/issues?repo=owner/repo')
+    expect(res.status).toBe(500)
+    expect(res.body.error).toMatch(/Network timeout/)
   })
 })
 
@@ -118,6 +174,15 @@ describe('POST /api/start', () => {
     const res = await request(serverModule.app).post('/api/start').send({})
     expect(res.status).toBe(200)
     expect(mockNatsClient.publish).toHaveBeenCalledWith('epik.supervisor', expect.any(String))
+  })
+
+  it('returns 500 when getNatsConnection rejects', async () => {
+    const { getNatsConnection } = await import('../server/nats.ts')
+    vi.mocked(getNatsConnection).mockRejectedValueOnce(new Error('NATS unreachable'))
+
+    const res = await request(serverModule.app).post('/api/start').send({})
+    expect(res.status).toBe(500)
+    expect(res.body.error).toMatch(/NATS unreachable/)
   })
 })
 
@@ -222,6 +287,34 @@ describe('WebSocket /ws', () => {
           // Give a tick for cleanup
           await new Promise((r) => setTimeout(r, 20))
           expect(mockListeners.size).toBe(initialListenerCount)
+          resolve()
+        })
+
+        ws.on('error', reject)
+      })
+    })
+  })
+
+  it('does not send events to a closed WebSocket client', async () => {
+    // This test verifies the ws.readyState === WebSocket.OPEN guard in the listener.
+    // We connect, wait for the pool_state, then close from the server side via wss,
+    // and fire an agent event — the guard should suppress the send without throwing.
+    await new Promise<void>((resolve, reject) => {
+      serverModule.server.listen(0, () => {
+        const addr = serverModule.server.address() as { port: number }
+        const ws = new WebSocket(`ws://localhost:${addr.port}/ws`)
+
+        ws.on('message', () => {
+          // Close all server-side connections directly via wss to ensure readyState is CLOSED
+          serverModule.wss.clients.forEach((client) => client.terminate())
+        })
+
+        ws.on('close', () => {
+          // Now fire an event — the server-side ws should be CLOSED
+          for (const cb of mockListeners) {
+            // This should NOT throw even though the WS is closed
+            cb('worker-0', { kind: 'turn_end' })
+          }
           resolve()
         })
 

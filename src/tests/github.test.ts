@@ -184,6 +184,24 @@ describe('github', () => {
       expect(graph.nodes).toHaveLength(0)
     })
 
+    it('stops parsing blockedBy when a subsequent heading is encountered', async () => {
+      // A "## Blocked by" section followed by another ## heading — the parser should stop
+      // at the second heading and not include subsequent lines.
+      const issueWithHeadingBreak = [
+        {
+          number: 10,
+          title: 'Issue with headed sections',
+          state: 'open',
+          labels: [],
+          body: '## Blocked by\n\n- #5\n- #6\n\n## Implementation\n\n- #99\n',
+        },
+      ]
+      const graph = await loadIssueGraph('owner', 'repo', makeExec(issueWithHeadingBreak))
+      const node = graph.nodes.find((n) => n.number === 10)
+      // Should have parsed 5 and 6, but stopped at ## Implementation
+      expect(node?.blockedBy).toEqual([5, 6])
+    })
+
     it('rejects on gh cli error', async () => {
       const exec = makeExecError(new Error('gh: not found'))
       await expect(loadIssueGraph('owner', 'repo', exec)).rejects.toThrow('gh: not found')
@@ -218,9 +236,83 @@ describe('github', () => {
       expect(result?.checksState).toBe('pending')
     })
 
+    it('returns checksState "failure" when statusCheckRollup state is ERROR', async () => {
+      const errorFixture = [
+        {
+          number: 104,
+          body: 'Closes #5',
+          mergeable: 'MERGEABLE',
+          statusCheckRollup: { state: 'ERROR' },
+        },
+      ]
+      const result = await getPRStatus('owner', 'repo', 5, makeExec(errorFixture))
+      expect(result?.checksState).toBe('failure')
+    })
+
+    it('returns checksState "pending" when statusCheckRollup state is unknown value', async () => {
+      const unknownFixture = [
+        {
+          number: 105,
+          body: 'Closes #6',
+          mergeable: 'MERGEABLE',
+          statusCheckRollup: { state: 'IN_PROGRESS' },
+        },
+      ]
+      const result = await getPRStatus('owner', 'repo', 6, makeExec(unknownFixture))
+      expect(result?.checksState).toBe('pending')
+    })
+
     it('includes prNumber in the result', async () => {
       const result = await getPRStatus('owner', 'repo', 2, makeExec(PR_FIXTURE_OPEN))
       expect(result?.prNumber).toBe(101)
+    })
+
+    it('returns null when no PR body matches the issue number', async () => {
+      const fixture = [{ number: 200, body: null, mergeable: null, statusCheckRollup: null }]
+      const result = await getPRStatus('owner', 'repo', 42, makeExec(fixture))
+      expect(result).toBeNull()
+    })
+
+    it('returns checksState "pending" when statusCheckRollup has no state property', async () => {
+      // statusCheckRollup is non-null but has no .state — the ?. chain returns undefined → pending
+      const fixture = [
+        {
+          number: 106,
+          body: 'Closes #7',
+          mergeable: 'MERGEABLE',
+          statusCheckRollup: {},
+        },
+      ]
+      const result = await getPRStatus('owner', 'repo', 7, makeExec(fixture))
+      expect(result?.checksState).toBe('pending')
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // runGhCommand
+  // -------------------------------------------------------------------------
+
+  describe('runGhCommand', () => {
+    it('rejects when gh is not found on PATH', async () => {
+      const { runGhCommand } = await import('../server/github.ts')
+      // Point PATH away from gh so execFile fails
+      const savedPath = process.env['PATH']
+      process.env['PATH'] = '/nonexistent'
+      try {
+        await expect(runGhCommand(['version'])).rejects.toThrow()
+      } finally {
+        process.env['PATH'] = savedPath
+      }
+    })
+
+    it('resolves with stdout when the command succeeds', async () => {
+      // Use a real command that gh wraps — `gh --version` outputs to stdout
+      const { runGhCommand } = await import('../server/github.ts')
+      // `gh version` or `gh --version` should be available in the CI/dev environment.
+      // If gh is not installed this test will fail — that's acceptable as a hard dependency.
+      const output = await runGhCommand(['--version'])
+      expect(typeof output).toBe('string')
+      expect(output.length).toBeGreaterThan(0)
     })
   })
 })

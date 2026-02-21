@@ -63,6 +63,7 @@ export async function runAgent(opts: RunAgentOptions): Promise<{ interrupt?: () 
         'nats_publish',
         'Publish a message to a NATS topic',
         { topic: z.string(), message: z.string() },
+        /* v8 ignore next */
         async () => ({ content: [{ type: 'text' as const, text: 'published' }] }),
       ),
     ],

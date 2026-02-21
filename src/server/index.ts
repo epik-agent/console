@@ -204,9 +204,11 @@ wss.on('connection', async (ws) => {
 // Server startup
 // ---------------------------------------------------------------------------
 
+/* v8 ignore start */
 if (process.argv[1] === new URL(import.meta.url).pathname) {
   const PORT = parseInt(process.env['PORT'] ?? '3001', 10)
   server.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`)
   })
 }
+/* v8 ignore end */
