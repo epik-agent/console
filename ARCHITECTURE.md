@@ -61,7 +61,7 @@ src/
 ## NATS topics
 
 | Topic             | Direction    | Purpose                              |
-| ----------------- | ------------ | ------------------------------------ |
+|-------------------|--------------|--------------------------------------|
 | `epik.supervisor` | → Supervisor | Assignments, CI reports, user input  |
 | `epik.worker.0`   | → Worker 0   | Issue assignments, injected messages |
 | `epik.worker.1`   | → Worker 1   | Issue assignments, injected messages |
@@ -71,7 +71,7 @@ src/
 ## REST API
 
 | Method | Path             | Description                                  |
-| ------ | ---------------- | -------------------------------------------- |
+|--------|------------------|----------------------------------------------|
 | GET    | `/api/issues`    | Returns `IssueGraph` for `?repo=owner/repo`  |
 | GET    | `/api/pool`      | Returns `PoolState` (agent statuses)         |
 | POST   | `/api/start`     | Triggers supervisor's first NATS message     |
@@ -200,7 +200,7 @@ Open `http://localhost:5173/?repo=owner/repo`.
 ### Scripts
 
 | Script                 | Description                                       |
-| ---------------------- | ------------------------------------------------- |
+|------------------------|---------------------------------------------------|
 | `npm run dev`          | Vite dev server + Express via tsx (hot reload)    |
 | `npm run server`       | Express server only (tsx watch)                   |
 | `npm run build`        | Type-check + Vite frontend bundle + server bundle |
@@ -250,7 +250,7 @@ exists locally, preventing any test-ordering sensitivity to local build state.
 ## Reuse from Epik
 
 | Epik source                   | Builder destination             | Changes                            |
-| ----------------------------- | ------------------------------- | ---------------------------------- |
+|-------------------------------|---------------------------------|------------------------------------|
 | `src/renderer/chatReducer.ts` | `src/client/chatReducer.ts`     | None                               |
 | `src/renderer/theme.ts`       | `src/client/theme.ts`           | Drop `PersonaId` import            |
 | `src/renderer/utils.ts`       | `src/client/utils.ts`           | None                               |
