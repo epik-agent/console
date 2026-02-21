@@ -2,12 +2,10 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import userEvent from '@testing-library/user-event'
 import ConsolePane, { ToolUseCard, ToolResultCard } from './ConsolePane'
-import { themes } from './theme'
 import { noop } from './test-fixtures'
 import type { AgentEvent, AgentId } from './types'
 
 const agentId: AgentId = 'worker-0'
-const palette = themes['dark']
 
 describe('ConsolePane', () => {
   it('renders without errors given mock props', () => {
@@ -240,7 +238,7 @@ describe('ConsolePane', () => {
 
 describe('ToolUseCard', () => {
   it('renders collapsed by default showing only the tool name', () => {
-    render(<ToolUseCard name="Bash" input={{ command: 'ls -la' }} palette={palette} />)
+    render(<ToolUseCard name="Bash" input={{ command: 'ls -la' }} />)
     expect(screen.getByText(/Bash/)).toBeInTheDocument()
     // Body should not be visible when collapsed
     expect(screen.queryByText('ls -la')).not.toBeInTheDocument()
@@ -248,7 +246,7 @@ describe('ToolUseCard', () => {
 
   it('expands to show Bash command body on click', async () => {
     const user = userEvent.setup()
-    render(<ToolUseCard name="Bash" input={{ command: 'echo hello' }} palette={palette} />)
+    render(<ToolUseCard name="Bash" input={{ command: 'echo hello' }} />)
     const header = screen.getByText(/Bash/).closest('div')!
     await user.click(header)
     expect(screen.getByText('echo hello')).toBeInTheDocument()
@@ -256,7 +254,7 @@ describe('ToolUseCard', () => {
 
   it('collapses again on second click', async () => {
     const user = userEvent.setup()
-    render(<ToolUseCard name="Bash" input={{ command: 'pwd' }} palette={palette} />)
+    render(<ToolUseCard name="Bash" input={{ command: 'pwd' }} />)
     const header = screen.getByText(/Bash/).closest('div')!
     await user.click(header)
     expect(screen.getByText('pwd')).toBeInTheDocument()
@@ -267,7 +265,7 @@ describe('ToolUseCard', () => {
   it('renders non-Bash tool input as pretty-printed JSON', async () => {
     const user = userEvent.setup()
     const input = { file_path: '/foo/bar.ts' }
-    render(<ToolUseCard name="Read" input={input} palette={palette} />)
+    render(<ToolUseCard name="Read" input={input} />)
     const header = screen.getByText(/Read/).closest('div')!
     await user.click(header)
     expect(screen.getByText(/file_path/)).toBeInTheDocument()
@@ -276,7 +274,7 @@ describe('ToolUseCard', () => {
   it('renders Bash tool with non-string command as JSON', async () => {
     const user = userEvent.setup()
     // command is not a string → should fall back to JSON.stringify
-    render(<ToolUseCard name="Bash" input={{ command: 42 }} palette={palette} />)
+    render(<ToolUseCard name="Bash" input={{ command: 42 }} />)
     const header = screen.getByText(/Bash/).closest('div')!
     await user.click(header)
     expect(screen.getByText(/42/)).toBeInTheDocument()
@@ -289,14 +287,14 @@ describe('ToolUseCard', () => {
 
 describe('ToolResultCard', () => {
   it('renders collapsed by default showing only "Result"', () => {
-    render(<ToolResultCard content="output text" palette={palette} />)
+    render(<ToolResultCard content="output text" />)
     expect(screen.getByText(/Result/)).toBeInTheDocument()
     expect(screen.queryByText('output text')).not.toBeInTheDocument()
   })
 
   it('expands to show string content on click', async () => {
     const user = userEvent.setup()
-    render(<ToolResultCard content="my result" palette={palette} />)
+    render(<ToolResultCard content="my result" />)
     const header = screen.getByText(/Result/).closest('div')!
     await user.click(header)
     expect(screen.getByText('my result')).toBeInTheDocument()
@@ -305,7 +303,7 @@ describe('ToolResultCard', () => {
   it('renders non-string content as JSON', async () => {
     const user = userEvent.setup()
     const content = { stdout: 'hello', exitCode: 0 }
-    render(<ToolResultCard content={content} palette={palette} />)
+    render(<ToolResultCard content={content} />)
     const header = screen.getByText(/Result/).closest('div')!
     await user.click(header)
     expect(screen.getByText(/stdout/)).toBeInTheDocument()
@@ -314,7 +312,7 @@ describe('ToolResultCard', () => {
   it('truncates content longer than 2000 characters', async () => {
     const user = userEvent.setup()
     const longContent = 'x'.repeat(2500)
-    render(<ToolResultCard content={longContent} palette={palette} />)
+    render(<ToolResultCard content={longContent} />)
     const header = screen.getByText(/Result/).closest('div')!
     await user.click(header)
     expect(screen.getByText(/truncated/)).toBeInTheDocument()
@@ -323,7 +321,7 @@ describe('ToolResultCard', () => {
   it('does not truncate content shorter than 2000 characters', async () => {
     const user = userEvent.setup()
     const shortContent = 'short result'
-    render(<ToolResultCard content={shortContent} palette={palette} />)
+    render(<ToolResultCard content={shortContent} />)
     const header = screen.getByText(/Result/).closest('div')!
     await user.click(header)
     expect(screen.queryByText(/truncated/)).not.toBeInTheDocument()

@@ -1,142 +1,103 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type SyntheticEvent,
-} from 'react'
+import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react'
 import AgentTabs from './AgentTabs'
 import IssueGraph from './IssueGraph'
-import { themes } from './theme'
-import { useAgentEvents } from './useAgentEvents'
+import { resolveApiBase, useAgentEvents } from './useAgentEvents'
 import { useAgentIssueMap } from './useAgentIssueMap'
 import { useTheme } from './useTheme'
-import type { IssueGraph as IssueGraphType } from './types'
+import type { ConnectionStatus, IssueGraph as IssueGraphType } from './types'
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Reads the `repo` query-string parameter from the current URL.
- *
- * @returns The raw `owner/repo` string, or an empty string if absent.
- */
 function repoFromUrl(): string {
   const params = new URLSearchParams(window.location.search)
   return params.get('repo') ?? ''
 }
 
-/** Sentinel empty graph used before the first successful `/api/issues` fetch. */
 const EMPTY_GRAPH: IssueGraphType = { nodes: [] }
+
+const CONNECTION_LABELS: Record<ConnectionStatus, string> = {
+  connected: 'Connected',
+  connecting: 'Connecting',
+  disconnected: 'Disconnected',
+}
+
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
+
+function ConnectionBadge({ status }: { status: ConnectionStatus }) {
+  return (
+    <span className={`connection-badge connection-badge--${status}`}>
+      <span className={`connection-dot connection-dot--${status}`} />
+      {CONNECTION_LABELS[status]}
+    </span>
+  )
+}
+
+function SunIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="8" cy="8" r="3" />
+      <line x1="8" y1="1" x2="8" y2="2.5" />
+      <line x1="8" y1="13.5" x2="8" y2="15" />
+      <line x1="1" y1="8" x2="2.5" y2="8" />
+      <line x1="13.5" y1="8" x2="15" y2="8" />
+      <line x1="3.05" y1="3.05" x2="4.11" y2="4.11" />
+      <line x1="11.89" y1="11.89" x2="12.95" y2="12.95" />
+      <line x1="3.05" y1="12.95" x2="4.11" y2="11.89" />
+      <line x1="11.89" y1="4.11" x2="12.95" y2="3.05" />
+    </svg>
+  )
+}
+
+function MoonIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M14 8.5A6.5 6.5 0 0 1 7.5 2 5 5 0 1 0 14 8.5Z" />
+    </svg>
+  )
+}
 
 // ---------------------------------------------------------------------------
 // App
 // ---------------------------------------------------------------------------
 
-/**
- * Root application component.
- *
- * Renders a toolbar with a repository input and a **Start** button, an
- * {@link IssueGraph} occupying the top half of the viewport, and
- * {@link AgentTabs} occupying the bottom half.
- *
- * On mount it reads `?repo=owner/repo` from the URL and fetches the issue
- * graph immediately. The **Start** button triggers `POST /api/start` to kick
- * off the Supervisor agent.
- */
 export default function App() {
   const { theme, toggleTheme } = useTheme()
-  const palette = themes[theme]
-  const { events, pool, sendMessage, interrupt } = useAgentEvents()
+  const { events, pool, connectionStatus, sendMessage, interrupt } = useAgentEvents()
+  const apiBase = resolveApiBase()
   const agentIssueMap = useAgentIssueMap(events)
   const [repo, setRepo] = useState<string>(repoFromUrl)
   const [repoInput, setRepoInput] = useState<string>(repoFromUrl)
   const [graph, setGraph] = useState<IssueGraphType>(EMPTY_GRAPH)
   const pendingRef = useRef(false)
 
-  const rootStyle: CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100vh',
-    background: palette.bg.root,
-    color: palette.text.primary,
-    fontFamily: 'system-ui, sans-serif',
-  }
-
-  const toolbarStyle: CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '8px 16px',
-    background: palette.bg.bar,
-    borderBottom: `1px solid ${palette.border.strong}`,
-    flexShrink: 0,
-  }
-
-  const repoInputStyle: CSSProperties = {
-    flex: 1,
-    padding: '6px 12px',
-    background: palette.bg.input,
-    border: `1px solid ${palette.border.strong}`,
-    borderRadius: '6px',
-    color: palette.text.primary,
-    fontSize: '14px',
-    outline: 'none',
-  }
-
-  const secondaryButtonStyle: CSSProperties = {
-    padding: '6px 14px',
-    background: palette.bg.inputBar,
-    border: 'none',
-    borderRadius: '6px',
-    color: palette.text.secondary,
-    cursor: 'pointer',
-    fontSize: '14px',
-  }
-
-  const startButtonStyle: CSSProperties = {
-    padding: '6px 18px',
-    background: palette.accent,
-    border: 'none',
-    borderRadius: '6px',
-    color: palette.text.primary,
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: 600,
-  }
-
-  const themeToggleStyle: CSSProperties = {
-    padding: '6px 10px',
-    background: 'transparent',
-    border: `1px solid ${palette.border.default}`,
-    borderRadius: '6px',
-    color: palette.text.primary,
-    cursor: 'pointer',
-    fontSize: '16px',
-    lineHeight: 1,
-  }
-
-  const topPaneStyle: CSSProperties = {
-    flex: 1,
-    minHeight: 0,
-    borderBottom: `1px solid ${palette.border.default}`,
-  }
-
-  const bottomPaneStyle: CSSProperties = {
-    flex: 1,
-    minHeight: 0,
-    display: 'flex',
-    flexDirection: 'column',
-  }
-
   // Fetch issue graph when repo changes
   useEffect(() => {
     if (!repo) return
     let cancelled = false
     pendingRef.current = true
-    fetch(`/api/issues?repo=${encodeURIComponent(repo)}`)
+    fetch(`${apiBase}/api/issues?repo=${encodeURIComponent(repo)}`)
       .then((r) => r.json())
       .then((data: IssueGraphType) => {
         if (!cancelled) setGraph(data)
@@ -150,7 +111,7 @@ export default function App() {
     return () => {
       cancelled = true
     }
-  }, [repo])
+  }, [repo, apiBase])
 
   const handleRepoSubmit = useCallback(
     (e: SyntheticEvent<HTMLFormElement>) => {
@@ -162,66 +123,120 @@ export default function App() {
   )
 
   const handleStart = useCallback(() => {
-    void fetch('/api/start', {
+    void fetch(`${apiBase}/api/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ repo }),
     })
-  }, [repo])
+  }, [repo, apiBase])
 
   return (
-    <div style={rootStyle}>
+    <div className="app-root">
       {/* Toolbar */}
-      <div style={toolbarStyle} aria-label="toolbar">
-        <form onSubmit={handleRepoSubmit} style={formStyle}>
+      <header className="toolbar" role="toolbar" aria-label="Main toolbar">
+        <div className="toolbar-brand">
+          <svg
+            className="toolbar-brand-mark"
+            width="22"
+            height="22"
+            viewBox="0 0 22 22"
+            fill="none"
+            aria-hidden="true"
+          >
+            {/* Node-graph constellation: 4 nodes connected by lines */}
+            <line
+              x1="5"
+              y1="5"
+              x2="17"
+              y2="8"
+              stroke="currentColor"
+              strokeWidth="1.2"
+              opacity="0.35"
+            />
+            <line
+              x1="5"
+              y1="5"
+              x2="8"
+              y2="17"
+              stroke="currentColor"
+              strokeWidth="1.2"
+              opacity="0.35"
+            />
+            <line
+              x1="17"
+              y1="8"
+              x2="14"
+              y2="17"
+              stroke="currentColor"
+              strokeWidth="1.2"
+              opacity="0.35"
+            />
+            <line
+              x1="8"
+              y1="17"
+              x2="14"
+              y2="17"
+              stroke="currentColor"
+              strokeWidth="1.2"
+              opacity="0.35"
+            />
+            <circle cx="5" cy="5" r="2.5" fill="var(--color-accent)" />
+            <circle cx="17" cy="8" r="2" fill="currentColor" />
+            <circle cx="8" cy="17" r="2" fill="currentColor" />
+            <circle cx="14" cy="17" r="1.6" fill="var(--color-accent)" opacity="0.7" />
+          </svg>
+          <span>
+            epi<span style={{ fontStyle: 'italic' }}>k</span>
+          </span>
+        </div>
+
+        <form onSubmit={handleRepoSubmit} className="toolbar-form">
           <input
-            style={repoInputStyle}
+            className="toolbar-input"
             value={repoInput}
             onChange={(e) => setRepoInput(e.target.value)}
             placeholder="owner/repo"
             aria-label="GitHub repository"
           />
-          <button type="submit" style={secondaryButtonStyle}>
+          <button type="submit" className="btn btn-secondary">
             Load
           </button>
         </form>
-        <button style={startButtonStyle} onClick={handleStart} disabled={!repo}>
+
+        <button
+          className="btn btn-primary"
+          onClick={handleStart}
+          disabled={!repo || connectionStatus !== 'connected'}
+        >
           Start
         </button>
+
+        <ConnectionBadge status={connectionStatus} />
+
         <button
-          style={themeToggleStyle}
+          className="btn btn-ghost"
           onClick={toggleTheme}
           aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
         >
-          {theme === 'dark' ? '☀' : '🌙'}
+          {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
         </button>
-      </div>
+      </header>
 
-      {/* Top 50%: Issue graph */}
-      <div style={topPaneStyle}>
+      {/* Top 50 %: Issue graph */}
+      <div className="pane-top">
         <IssueGraph graph={graph} events={events} agentIssueMap={agentIssueMap} />
       </div>
 
-      {/* Bottom 50%: Agent tabs */}
-      <div style={bottomPaneStyle}>
+      {/* Bottom 50 %: Agent tabs */}
+      <div className="pane-bottom">
         <AgentTabs
           pool={pool}
           events={events}
+          agentIssueMap={agentIssueMap}
           onSend={sendMessage}
           onInterrupt={interrupt}
-          theme={theme}
         />
       </div>
     </div>
   )
-}
-
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
-
-const formStyle: CSSProperties = {
-  display: 'flex',
-  gap: '6px',
-  flex: 1,
 }

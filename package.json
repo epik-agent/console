@@ -4,9 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"vite\" \"npm run server\"",
+    "dev": "vite",
+    "dev:full": "concurrently \"vite\" \"npm run server\"",
     "server": "tsx watch src/server/index.ts",
     "build": "tsc -b && vite build && npm run build:server",
+    "build:client": "vite build",
     "build:server": "esbuild src/server/index.ts --bundle --platform=node --format=esm --outfile=dist/server.js --external:@anthropic-ai/claude-agent-sdk --external:nats --external:express --external:ws",
     "lint": "tsc --noEmit && eslint .",
     "format": "prettier --write .",

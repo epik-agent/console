@@ -103,6 +103,13 @@ export type CompactionMessage = { role: 'compaction'; summary: string }
 export type Message = UserMessage | AssistantMessage | CompactionMessage
 
 // ---------------------------------------------------------------------------
+// Connection
+// ---------------------------------------------------------------------------
+
+/** WebSocket connection lifecycle state. */
+export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected'
+
+// ---------------------------------------------------------------------------
 // Agent configuration
 // ---------------------------------------------------------------------------
 

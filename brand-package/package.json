@@ -1,0 +1,35 @@
+{
+  "name": "@epik-agent/brand",
+  "version": "1.0.0",
+  "description": "Brand tokens, assets, and generated styles for the Epik product family",
+  "type": "module",
+  "main": "dist/brand.js",
+  "types": "dist/brand.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/brand.js",
+      "types": "./dist/brand.d.ts"
+    },
+    "./brand.json": "./brand.json",
+    "./brand.css": "./dist/brand.css",
+    "./assets/*": "./assets/*"
+  },
+  "files": [
+    "brand.json",
+    "assets/",
+    "dist/"
+  ],
+  "scripts": {
+    "generate": "node scripts/generate.js",
+    "build": "npm run generate",
+    "prepublishOnly": "npm run build"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/epik-agent/brand.git"
+  },
+  "license": "UNLICENSED"
+}
