@@ -2,7 +2,7 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import { fileURLToPath } from 'url'
 import { vi } from 'vitest'
-import type { AgentEvent } from '../client/types.ts'
+import type { AgentEvent, AgentId } from '../client/types.ts'
 import type { RunAgentOptions } from '../server/runner.ts'
 
 // ---------------------------------------------------------------------------
@@ -22,6 +22,31 @@ export function readProjectFile(filename: string): string {
 /** Pause for `ms` milliseconds (lets async event-loop callbacks run). */
 export function tick(ms = 10): Promise<void> {
   return new Promise((r) => setTimeout(r, ms))
+}
+
+// ---------------------------------------------------------------------------
+// Agent pool mock factory
+// ---------------------------------------------------------------------------
+
+export type AgentEventListener = (agentId: AgentId, event: AgentEvent) => void
+
+/**
+ * Creates a linked (mockListeners, mockAgentPool) pair suitable for use in
+ * vi.mock('../server/agentPool.ts') factories.  Call once at module scope,
+ * then close over the returned objects inside vi.mock.
+ */
+export function makeAgentPoolMock(pool: import('../client/types.ts').PoolState = []) {
+  const mockListeners = new Set<AgentEventListener>()
+  const mockAgentPool = {
+    getPool: vi.fn(() => pool),
+    registerListener: vi.fn((cb: AgentEventListener) => {
+      mockListeners.add(cb)
+      return () => mockListeners.delete(cb)
+    }),
+    injectMessage: vi.fn(),
+    interrupt: vi.fn(),
+  }
+  return { mockListeners, mockAgentPool }
 }
 
 // ---------------------------------------------------------------------------
