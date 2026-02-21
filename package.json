@@ -8,7 +8,7 @@
     "server": "tsx watch src/server/index.ts",
     "build": "tsc -b && vite build && npm run build:server",
     "build:server": "esbuild src/server/index.ts --bundle --platform=node --format=esm --outfile=dist/server.js --external:@anthropic-ai/claude-agent-sdk --external:nats --external:express --external:ws",
-    "lint": "eslint .",
+    "lint": "tsc --noEmit && eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "docker": "GH_TOKEN=$(gh auth token) docker compose up --build",

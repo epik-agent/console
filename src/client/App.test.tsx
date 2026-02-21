@@ -1,3 +1,4 @@
+import React from 'react'
 import { render, screen, act } from '@testing-library/react'
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import App from './App'
@@ -331,9 +332,9 @@ describe('App', () => {
       capturedAgentIssueMap = undefined
       const IssueGraphModule = await import('./IssueGraph')
       vi.spyOn(IssueGraphModule, 'default').mockImplementation(
-        (props: { agentIssueMap?: Partial<Record<AgentId, number>> }) => {
+        (props: Parameters<typeof IssueGraphModule.default>[0]) => {
           capturedAgentIssueMap = props.agentIssueMap
-          return null
+          return null as unknown as React.ReactElement
         },
       )
     })
