@@ -1,9 +1,21 @@
 import { execSync } from 'child_process'
+import { existsSync } from 'fs'
+import { join } from 'path'
 import type { NatsConnection } from 'nats'
 import type { AgentEvent, AgentConfig } from '../client/types.ts'
 
-/** Retrieves the active GitHub OAuth token via the `gh` CLI, or `undefined` if unavailable. */
+/** Retrieves the active GitHub OAuth token, or `undefined` if unavailable.
+ *
+ * Prefers the ``GH_TOKEN`` environment variable (set in Docker). Falls back to
+ * ``gh auth token`` only when the ``gh`` config directory exists, indicating
+ * the CLI has been set up. This avoids the "no oauth token found" stderr noise
+ * in CI environments where ``gh`` is installed but never authenticated.
+ */
 function githubToken(): string | undefined {
+  if (process.env['GH_TOKEN']) return process.env['GH_TOKEN']
+  const ghConfigDir =
+    process.env['GH_CONFIG_DIR'] ?? join(process.env['HOME'] ?? '', '.config', 'gh')
+  if (!existsSync(ghConfigDir)) return undefined
   try {
     return execSync('gh auth token', { encoding: 'utf8' }).trim()
   } catch {

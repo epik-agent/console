@@ -118,6 +118,19 @@ Vite runs its own server. In tests, leaving it unset means the static middleware
 is never registered regardless of whether a `dist/` directory exists on disk,
 eliminating any test-ordering sensitivity to local build state.
 
+### GitHub token resolution
+
+The server resolves the GitHub token used by the agent workers in this order:
+
+1. `GH_TOKEN` environment variable — set explicitly in Docker (`npm run docker`
+   injects it via `gh auth token`)
+2. `gh auth token` CLI — called only when `~/.config/gh` exists, indicating the
+   CLI has been authenticated at least once
+
+Checking for the config directory before calling `gh auth token` avoids the
+`no oauth token found for github.com` stderr noise that `gh` emits in CI
+environments where it is installed but never authenticated.
+
 ## Architecture
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full system design, data types,
