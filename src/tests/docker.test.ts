@@ -11,6 +11,7 @@
  * - Static files served from `dist/` in production
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { loadIssueGraph, runGhCommand } from '../server/github.ts'
 import { readProjectFile } from './test-fixtures.ts'
 
 // ---------------------------------------------------------------------------
@@ -63,7 +64,6 @@ describe('nats module — NATS_URL env var', () => {
 describe('github module — GH_TOKEN handling', () => {
   it('passes GH_TOKEN to the gh CLI environment when set', async () => {
     process.env['GH_TOKEN'] = 'test-token-123'
-    const { runGhCommand } = await import('../server/github.ts')
     // runGhCommand calls execFile with gh; we can't easily intercept execFile here,
     // but we can verify the function is exported and callable.
     // The actual env-passing is tested via the exec parameter pattern.
@@ -72,8 +72,6 @@ describe('github module — GH_TOKEN handling', () => {
   })
 
   it('returns a clear error message when GH_TOKEN is not configured', async () => {
-    const { loadIssueGraph } = await import('../server/github.ts')
-
     // Simulate gh CLI failing because no token is available
     const execNoToken = vi
       .fn()
@@ -88,8 +86,6 @@ describe('github module — GH_TOKEN handling', () => {
   })
 
   it('loadIssueGraph raises an error that mentions GitHub token when gh CLI rejects with auth error', async () => {
-    const { loadIssueGraph } = await import('../server/github.ts')
-
     const authError = new Error(
       'HTTP 401: Bad credentials (https://api.github.com/repos/owner/repo/issues?state=open&per_page=100)',
     )

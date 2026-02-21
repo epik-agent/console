@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { loadIssueGraph, getPRStatus } from '../server/github.ts'
+import { loadIssueGraph, getPRStatus, runGhCommand } from '../server/github.ts'
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -294,7 +294,6 @@ describe('github', () => {
 
   describe('runGhCommand', () => {
     it('rejects when gh is not found on PATH', async () => {
-      const { runGhCommand } = await import('../server/github.ts')
       // Point PATH away from gh so execFile fails
       const savedPath = process.env['PATH']
       process.env['PATH'] = '/nonexistent'
@@ -307,7 +306,6 @@ describe('github', () => {
 
     it('resolves with stdout when the command succeeds', async () => {
       // Use a real command that gh wraps — `gh --version` outputs to stdout
-      const { runGhCommand } = await import('../server/github.ts')
       // `gh version` or `gh --version` should be available in the CI/dev environment.
       // If gh is not installed this test will fail — that's acceptable as a hard dependency.
       const output = await runGhCommand(['--version'])
