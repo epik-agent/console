@@ -18,16 +18,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/cache@v4
         id: cache-node-modules
         with:
           path: node_modules
-          key: node-modules-${{ hashFiles('package-lock.json') }}
+          key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
       - if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         env:
           PACKAGES_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
-      - run: npm test -- --coverage
+      - run: pnpm test -- --coverage
       - uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
