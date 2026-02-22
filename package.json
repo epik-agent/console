@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.49",
-    "@epik-agent/brand": "^0.1.0",
+    "@epik-agent/brand": "^3.0.0",
     "@types/supertest": "^6.0.3",
     "express": "^5.2.1",
     "highlight.js": "^11.11.1",

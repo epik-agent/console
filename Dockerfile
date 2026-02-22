@@ -6,9 +6,12 @@ FROM node:20-slim AS builder
 WORKDIR /app
 
 # Copy package files first for layer-caching
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 
-RUN npm ci
+# PACKAGES_TOKEN is needed to pull @epik-agent scoped packages from GitHub Packages
+ARG PACKAGES_TOKEN
+
+RUN PACKAGES_TOKEN=${PACKAGES_TOKEN} npm ci
 
 # Copy source and config
 COPY . .
@@ -37,8 +40,9 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy package files and install production dependencies only
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+ARG PACKAGES_TOKEN
+COPY package.json package-lock.json .npmrc ./
+RUN PACKAGES_TOKEN=${PACKAGES_TOKEN} npm ci --omit=dev
 
 # Copy compiled artifacts from builder stage (frontend + bundled server)
 COPY --from=builder /app/dist ./dist

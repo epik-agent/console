@@ -25,6 +25,8 @@ jobs:
           key: node-modules-${{ hashFiles('package-lock.json') }}
       - if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
+        env:
+          PACKAGES_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
       - run: npm test -- --coverage
       - uses: codecov/codecov-action@v5
         with:
