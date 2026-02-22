@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
 import type { NodeObject } from 'react-force-graph-2d'
+import { palette } from '@epik-agent/brand'
 import type { AgentEvent, AgentId, IssueGraph as IssueGraphType } from './types'
 
 // ---------------------------------------------------------------------------
-// Constants
+// Constants (sourced from brand package)
 // ---------------------------------------------------------------------------
 
-const COLOR_CLOSED = '#34d399'
-const COLOR_OPEN = '#f5a623'
-const COLOR_BLINK = '#00e599'
+const COLOR_CLOSED = palette.dark.graph.closed
+const COLOR_OPEN = palette.dark.graph.open
+const COLOR_BLINK = palette.dark.graph.active
 const BLINK_DURATION_MS = 500
 
 // ---------------------------------------------------------------------------
@@ -155,7 +156,7 @@ export default function IssueGraph({ graph, events, agentIssueMap }: IssueGraphP
         nodeRelSize={6}
         linkDirectionalArrowLength={6}
         linkDirectionalArrowRelPos={1}
-        linkColor={() => 'rgba(255,255,255,0.10)'}
+        linkColor={() => palette.dark.graph.link}
         backgroundColor="transparent"
       />
 

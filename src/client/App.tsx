@@ -180,10 +180,10 @@ export default function App() {
               strokeWidth="1.2"
               opacity="0.35"
             />
-            <circle cx="5" cy="5" r="2.5" fill="var(--color-accent)" />
+            <circle cx="5" cy="5" r="2.5" fill="var(--brand-accent-base)" />
             <circle cx="17" cy="8" r="2" fill="currentColor" />
             <circle cx="8" cy="17" r="2" fill="currentColor" />
-            <circle cx="14" cy="17" r="1.6" fill="var(--color-accent)" opacity="0.7" />
+            <circle cx="14" cy="17" r="1.6" fill="var(--brand-accent-base)" opacity="0.7" />
           </svg>
           <span>
             epi<span style={{ fontStyle: 'italic' }}>k</span>
