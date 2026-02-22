@@ -16,12 +16,6 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* Brand package alias (vendored locally) */
-    "paths": {
-      "@epik-agent/brand": ["./src/brand/index.ts"],
-      "@epik-agent/brand/brand.css": ["./src/brand/brand.css"]
-    },
-
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
