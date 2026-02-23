@@ -25,9 +25,7 @@ function isTextBlock(v: unknown): v is { type: 'text'; text: string } {
 
 function isToolResultBlock(v: unknown): v is { type: 'tool_result'; content: unknown } {
   return (
-    typeof v === 'object' &&
-    v !== null &&
-    (v as Record<string, unknown>)['type'] === 'tool_result'
+    typeof v === 'object' && v !== null && (v as Record<string, unknown>)['type'] === 'tool_result'
   )
 }
 

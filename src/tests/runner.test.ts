@@ -318,9 +318,7 @@ describe('type guard malformed input handling', () => {
       {
         type: 'assistant',
         message: {
-          content: [
-            { type: 'tool_use', name: 'nats_publish', input: { message: 'hello' } },
-          ],
+          content: [{ type: 'tool_use', name: 'nats_publish', input: { message: 'hello' } }],
         },
       },
     ]
@@ -349,9 +347,7 @@ describe('type guard malformed input handling', () => {
       {
         type: 'user',
         message: {
-          content: [
-            { type: 'text', summary: '<parameter name="summary">no text key</parameter>' },
-          ],
+          content: [{ type: 'text', summary: '<parameter name="summary">no text key</parameter>' }],
         },
       },
     ]
