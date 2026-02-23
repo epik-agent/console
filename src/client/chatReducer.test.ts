@@ -204,7 +204,12 @@ describe('agent_event / compaction', () => {
       event: { kind: 'compaction', summary: 'Context compacted', trigger: 'auto', preTokens: 0 },
     })
     expect(state.messages).toHaveLength(1)
-    expect(state.messages[0]).toEqual({ role: 'compaction', summary: 'Context compacted', trigger: 'auto', preTokens: 0 })
+    expect(state.messages[0]).toEqual({
+      role: 'compaction',
+      summary: 'Context compacted',
+      trigger: 'auto',
+      preTokens: 0,
+    })
   })
 })
 

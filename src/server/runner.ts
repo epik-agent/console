@@ -149,7 +149,10 @@ export async function runAgent(opts: RunAgentOptions): Promise<{ interrupt?: () 
       } else if (msg.subtype === 'compact_boundary') {
         // SDKCompactBoundaryMessage: first-class SDK signal that context compaction occurred.
         // The summary text is not available here — it arrives in the next user message.
-        pendingCompaction = { trigger: msg.compact_metadata.trigger, preTokens: msg.compact_metadata.pre_tokens }
+        pendingCompaction = {
+          trigger: msg.compact_metadata.trigger,
+          preTokens: msg.compact_metadata.pre_tokens,
+        }
       }
       continue
     }

@@ -146,7 +146,12 @@ describe('types', () => {
   })
 
   it('CompactionMessage has role compaction and summary', () => {
-    const m: CompactionMessage = { role: 'compaction', summary: 'compact', trigger: 'auto', preTokens: 0 }
+    const m: CompactionMessage = {
+      role: 'compaction',
+      summary: 'compact',
+      trigger: 'auto',
+      preTokens: 0,
+    }
     expectTypeOf(m).toExtend<CompactionMessage>()
   })
 

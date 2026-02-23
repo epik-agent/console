@@ -97,7 +97,12 @@ export type UserMessage = { role: 'user'; text: string }
 export type AssistantMessage = { role: 'assistant'; blocks: Block[] }
 
 /** A visual marker inserted into the chat history when the SDK compacts the context window. */
-export type CompactionMessage = { role: 'compaction'; summary: string; trigger: 'manual' | 'auto'; preTokens: number }
+export type CompactionMessage = {
+  role: 'compaction'
+  summary: string
+  trigger: 'manual' | 'auto'
+  preTokens: number
+}
 
 /** A single entry in the chat history. */
 export type Message = UserMessage | AssistantMessage | CompactionMessage
