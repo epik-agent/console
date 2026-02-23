@@ -20,7 +20,7 @@ import { WebSocketServer, WebSocket } from 'ws'
 import { createServer } from 'http'
 import { resolve } from 'path'
 import { fileURLToPath } from 'url'
-import type { AgentId, ServerMessage } from '../client/types.ts'
+import type { AgentId, ApiError, ServerMessage } from '../client/types.ts'
 import { createAgentPool } from './agentPool.ts'
 import { getNatsConnection, registerShutdownHandler, TOPIC_SUPERVISOR } from './nats.ts'
 import { loadIssueGraph } from './github.ts'
@@ -69,12 +69,12 @@ const poolPromise = createAgentPool()
 app.get('/api/issues', async (req, res) => {
   const repo = req.query['repo']
   if (typeof repo !== 'string' || !repo) {
-    res.status(400).json({ error: 'Missing required query parameter: repo' })
+    res.status(400).json({ code: 'INVALID_REPO', message: 'Missing required query parameter: repo' } satisfies ApiError)
     return
   }
   const [owner, repoName] = repo.split('/')
   if (!owner || !repoName) {
-    res.status(400).json({ error: 'repo must be in owner/repo format' })
+    res.status(400).json({ code: 'INVALID_REPO', message: 'repo must be in owner/repo format' } satisfies ApiError)
     return
   }
   try {
@@ -91,10 +91,11 @@ app.get('/api/issues', async (req, res) => {
       message.includes('authentication')
     ) {
       res.status(500).json({
-        error: 'GitHub token not configured. Set the GH_TOKEN environment variable.',
-      })
+        code: 'GITHUB_AUTH_ERROR',
+        message: 'GitHub token not configured. Set the GH_TOKEN environment variable.',
+      } satisfies ApiError)
     } else {
-      res.status(500).json({ error: message })
+      res.status(500).json({ code: 'GITHUB_ERROR', message } satisfies ApiError)
     }
   }
 })
@@ -121,7 +122,7 @@ app.post('/api/start', async (_req, res) => {
     nc.publish(TOPIC_SUPERVISOR, 'start')
     res.json({ ok: true })
   } catch (err) {
-    res.status(500).json({ error: String(err) })
+    res.status(500).json({ code: 'NATS_UNAVAILABLE', message: String(err) } satisfies ApiError)
   }
 })
 
@@ -136,7 +137,7 @@ app.post('/api/start', async (_req, res) => {
 app.post('/api/message', async (req, res) => {
   const { agentId, text } = req.body as { agentId?: AgentId; text?: string }
   if (!agentId || !text) {
-    res.status(400).json({ error: 'Missing required fields: agentId, text' })
+    res.status(400).json({ code: 'MISSING_FIELDS', message: 'Missing required fields: agentId, text' } satisfies ApiError)
     return
   }
   const pool = await poolPromise
@@ -155,7 +156,7 @@ app.post('/api/message', async (req, res) => {
 app.post('/api/interrupt', async (req, res) => {
   const { agentId } = req.body as { agentId?: AgentId }
   if (!agentId) {
-    res.status(400).json({ error: 'Missing required field: agentId' })
+    res.status(400).json({ code: 'MISSING_FIELDS', message: 'Missing required field: agentId' } satisfies ApiError)
     return
   }
   const pool = await poolPromise
