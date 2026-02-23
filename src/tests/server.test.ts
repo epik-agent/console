@@ -103,7 +103,7 @@ describe('GET /api/issues', () => {
   it('returns 400 when repo does not contain a slash', async () => {
     const res = await request(serverModule.app).get('/api/issues?repo=nodash')
     expect(res.status).toBe(400)
-    expect(res.body.error).toMatch(/owner\/repo/)
+    expect(res.body.code).toBe('INVALID_REPO')
   })
 
   it('returns 200 with IssueGraph JSON when repo is provided', async () => {
@@ -118,7 +118,8 @@ describe('GET /api/issues', () => {
 
     const res = await request(serverModule.app).get('/api/issues?repo=owner/repo')
     expect(res.status).toBe(500)
-    expect(res.body.error).toMatch(/GH_TOKEN/)
+    expect(res.body.code).toBe('GITHUB_AUTH_ERROR')
+    expect(res.body.message).toMatch(/GH_TOKEN/)
   })
 
   it('returns 500 with a GitHub token message when loadIssueGraph rejects with Bad credentials', async () => {
@@ -127,7 +128,8 @@ describe('GET /api/issues', () => {
 
     const res = await request(serverModule.app).get('/api/issues?repo=owner/repo')
     expect(res.status).toBe(500)
-    expect(res.body.error).toMatch(/GH_TOKEN/)
+    expect(res.body.code).toBe('GITHUB_AUTH_ERROR')
+    expect(res.body.message).toMatch(/GH_TOKEN/)
   })
 
   it('returns 500 with a GitHub token message when loadIssueGraph rejects with GH_TOKEN error', async () => {
@@ -136,7 +138,8 @@ describe('GET /api/issues', () => {
 
     const res = await request(serverModule.app).get('/api/issues?repo=owner/repo')
     expect(res.status).toBe(500)
-    expect(res.body.error).toMatch(/GH_TOKEN/)
+    expect(res.body.code).toBe('GITHUB_AUTH_ERROR')
+    expect(res.body.message).toMatch(/GH_TOKEN/)
   })
 
   it('returns 500 with a GitHub token message when loadIssueGraph rejects with authentication error', async () => {
@@ -145,7 +148,8 @@ describe('GET /api/issues', () => {
 
     const res = await request(serverModule.app).get('/api/issues?repo=owner/repo')
     expect(res.status).toBe(500)
-    expect(res.body.error).toMatch(/GH_TOKEN/)
+    expect(res.body.code).toBe('GITHUB_AUTH_ERROR')
+    expect(res.body.message).toMatch(/GH_TOKEN/)
   })
 
   it('returns 500 with the raw error message for non-auth errors', async () => {
@@ -154,7 +158,8 @@ describe('GET /api/issues', () => {
 
     const res = await request(serverModule.app).get('/api/issues?repo=owner/repo')
     expect(res.status).toBe(500)
-    expect(res.body.error).toMatch(/Network timeout/)
+    expect(res.body.code).toBe('GITHUB_ERROR')
+    expect(res.body.message).toMatch(/Network timeout/)
   })
 })
 
@@ -171,7 +176,8 @@ describe('POST /api/start', () => {
 
     const res = await request(serverModule.app).post('/api/start').send({})
     expect(res.status).toBe(500)
-    expect(res.body.error).toMatch(/NATS unreachable/)
+    expect(res.body.code).toBe('NATS_UNAVAILABLE')
+    expect(res.body.message).toMatch(/NATS unreachable/)
   })
 })
 
