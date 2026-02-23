@@ -1,15 +1,15 @@
-# Builder
+# Console
 
 [![CI](https://github.com/epik-agent/console/actions/workflows/ci.yml/badge.svg)](https://github.com/epik-agent/console/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/epik-agent/console/graph/badge.svg?token=1V88WCNEGN)](https://codecov.io/gh/epik-agent/console)
 
-Builder is a multi-agent build console. Give it a GitHub repository with open
+Console is a multi-agent build console. Give it a GitHub repository with open
 issues and it autonomously implements them using a team of Claude Code agents
 coordinated over NATS.
 
 ## Quick start with Docker
 
-The easiest way to run Builder is with Docker Compose, which starts NATS and
+The easiest way to run Console is with Docker Compose, which starts NATS and
 the application server automatically.
 
 ### Without GitHub access
@@ -32,7 +32,7 @@ This pulls your token from the `gh` CLI keyring automatically
 (`GH_TOKEN=$(gh auth token) docker compose up`). Requires `gh auth login`
 to have been run at least once.
 
-Open http://localhost:5173 and enter `epik-agent/builder` (or any
+Open http://localhost:5173 and enter `epik-agent/console` (or any
 `owner/repo`) in the toolbar. Click **Load** to fetch the issue graph.
 
 ### What you should see
@@ -90,7 +90,7 @@ TypeScript source via `tsx watch` on `:3001`.
    left as externals so they are resolved from `node_modules` at runtime
 
 **Docker** (`docker compose up --build`): runs the production build inside the
-builder stage, then copies only `dist/` into the lean production image.
+build stage, then copies only `dist/` into the lean production image.
 `node_modules` on the host is excluded via `.dockerignore` so the container
 always installs fresh Linux-compatible binaries.
 

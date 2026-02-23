@@ -1,6 +1,6 @@
-# Builder — Architecture
+# Console — Architecture
 
-Builder is a single-page multi-agent build console. Given a GitHub repository
+Console is a single-page multi-agent build console. Given a GitHub repository
 with open issues, it autonomously implements the issues using a team of Claude
 Code agents coordinated over NATS.
 
@@ -222,7 +222,7 @@ The Express server runs from TypeScript source via `tsx watch` on `:3001`.
    runtime dependencies (`express`, `ws`, `nats`, `@anthropic-ai/claude-agent-sdk`)
    as externals resolved from `node_modules`
 
-**Docker** (`docker compose up --build`): runs the production build in a builder
+**Docker** (`docker compose up --build`): runs the production build in a build
 stage, then copies only `dist/` into a lean production image. `.dockerignore`
 excludes the host `node_modules` so the container always installs fresh
 Linux-compatible binaries. Layer caching means `npm ci` and `gh` installation
@@ -249,7 +249,7 @@ exists locally, preventing any test-ordering sensitivity to local build state.
 
 ## Reuse from Epik
 
-| Epik source                   | Builder destination             | Changes                            |
+| Epik source                   | Console destination             | Changes                            |
 | ----------------------------- | ------------------------------- | ---------------------------------- |
 | `src/renderer/chatReducer.ts` | `src/client/chatReducer.ts`     | None                               |
 | `src/renderer/theme.ts`       | `src/client/theme.ts`           | Drop `PersonaId` import            |
