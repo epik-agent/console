@@ -27,7 +27,7 @@ describe('types', () => {
     const e4: AgentEvent = { kind: 'turn_end' }
     const e5: AgentEvent = { kind: 'error', message: 'oops' }
     const e6: AgentEvent = { kind: 'inject', text: 'injected' }
-    const e7: AgentEvent = { kind: 'compaction', summary: 'compact' }
+    const e7: AgentEvent = { kind: 'compaction', summary: 'compact', trigger: 'auto', preTokens: 0 }
     expectTypeOf(e1).toExtend<AgentEvent>()
     expectTypeOf(e2).toExtend<AgentEvent>()
     expectTypeOf(e3).toExtend<AgentEvent>()
@@ -146,14 +146,14 @@ describe('types', () => {
   })
 
   it('CompactionMessage has role compaction and summary', () => {
-    const m: CompactionMessage = { role: 'compaction', summary: 'compact' }
+    const m: CompactionMessage = { role: 'compaction', summary: 'compact', trigger: 'auto', preTokens: 0 }
     expectTypeOf(m).toExtend<CompactionMessage>()
   })
 
   it('Message is a union of UserMessage, AssistantMessage, CompactionMessage', () => {
     const m1: Message = { role: 'user', text: 'hi' }
     const m2: Message = { role: 'assistant', blocks: [] }
-    const m3: Message = { role: 'compaction', summary: 'summary' }
+    const m3: Message = { role: 'compaction', summary: 'summary', trigger: 'auto', preTokens: 0 }
     expectTypeOf(m1).toExtend<Message>()
     expectTypeOf(m2).toExtend<Message>()
     expectTypeOf(m3).toExtend<Message>()

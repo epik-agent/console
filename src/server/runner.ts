@@ -140,9 +140,17 @@ export async function runAgent(opts: RunAgentOptions): Promise<{ interrupt?: () 
     })
   }
 
+  let pendingCompaction: { trigger: 'manual' | 'auto'; preTokens: number } | null = null
+
   for await (const msg of messages as AsyncIterable<SDKMessage>) {
-    if (msg.type === 'system' && msg.subtype === 'init') {
-      opts.onSessionId(msg.session_id)
+    if (msg.type === 'system') {
+      if (msg.subtype === 'init') {
+        opts.onSessionId(msg.session_id)
+      } else if (msg.subtype === 'compact_boundary') {
+        // SDKCompactBoundaryMessage: first-class SDK signal that context compaction occurred.
+        // The summary text is not available here — it arrives in the next user message.
+        pendingCompaction = { trigger: msg.compact_metadata.trigger, preTokens: msg.compact_metadata.pre_tokens }
+      }
       continue
     }
 
@@ -172,7 +180,14 @@ export async function runAgent(opts: RunAgentOptions): Promise<{ interrupt?: () 
     if (msg.type === 'user') {
       for (const block of msg.message.content) {
         if (isTextBlock(block) && block.text.includes('<parameter name="summary">')) {
-          opts.send({ kind: 'compaction', summary: block.text })
+          // Claude Code injects the compaction summary as an XML-formatted parameter block in a
+          // synthetic user message immediately following the compact_boundary system event.
+          // This heuristic extracts it. If Claude Code's internal format changes, compaction
+          // detection (via compact_boundary above) will still work, but summary extraction
+          // will silently stop populating the summary field.
+          const meta = pendingCompaction ?? { trigger: 'auto' as const, preTokens: 0 }
+          pendingCompaction = null
+          opts.send({ kind: 'compaction', summary: block.text, ...meta })
           continue
         }
         if (isToolResultBlock(block)) {

@@ -133,7 +133,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
             ...state,
             messages: [
               ...state.messages,
-              { role: 'compaction', summary: event.summary } satisfies CompactionMessage,
+              { role: 'compaction', summary: event.summary, trigger: event.trigger, preTokens: event.preTokens } satisfies CompactionMessage,
             ],
           }
       }

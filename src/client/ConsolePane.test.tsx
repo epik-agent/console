@@ -33,7 +33,7 @@ describe('ConsolePane', () => {
   })
 
   it('renders a compaction marker for compaction events', () => {
-    const events: AgentEvent[] = [{ kind: 'compaction', summary: 'Context was summarized' }]
+    const events: AgentEvent[] = [{ kind: 'compaction', summary: 'Context was summarized', trigger: 'auto', preTokens: 0 }]
     render(<ConsolePane agentId={agentId} events={events} onSend={noop} onInterrupt={noop} />)
     expect(screen.getByTestId('compaction-marker')).toBeInTheDocument()
     expect(screen.getByText('Context compacted')).toBeInTheDocument()
