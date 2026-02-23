@@ -201,10 +201,15 @@ describe('agent_event / compaction', () => {
   it('appends a compaction message', () => {
     const state = chatReducer(initialChatState, {
       type: 'agent_event',
-      event: { kind: 'compaction', summary: 'Context compacted' },
+      event: { kind: 'compaction', summary: 'Context compacted', trigger: 'auto', preTokens: 0 },
     })
     expect(state.messages).toHaveLength(1)
-    expect(state.messages[0]).toEqual({ role: 'compaction', summary: 'Context compacted' })
+    expect(state.messages[0]).toEqual({
+      role: 'compaction',
+      summary: 'Context compacted',
+      trigger: 'auto',
+      preTokens: 0,
+    })
   })
 })
 

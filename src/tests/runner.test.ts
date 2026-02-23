@@ -72,7 +72,7 @@ describe('runAgent', () => {
     expect(events).toContainEqual({ kind: 'tool_result', content: 'command output' })
   })
 
-  it('emits compaction for user messages with compaction summaries', async () => {
+  it('emits compaction with fallback defaults when no preceding compact_boundary', async () => {
     const messages = [
       {
         type: 'user',
@@ -90,6 +90,53 @@ describe('runAgent', () => {
     expect(events).toContainEqual({
       kind: 'compaction',
       summary: 'some text with <parameter name="summary">compact summary</parameter>',
+      trigger: 'auto',
+      preTokens: 0,
+    })
+  })
+
+  it('does not emit a compaction event for compact_boundary system message alone', async () => {
+    const messages = [
+      {
+        type: 'system',
+        subtype: 'compact_boundary',
+        compact_metadata: { trigger: 'auto', pre_tokens: 50000 },
+        uuid: 'uuid-1',
+        session_id: 'sess-1',
+      },
+    ]
+    const { events } = await collect({ messages })
+    expect(events.filter((e) => e.kind === 'compaction')).toHaveLength(0)
+    expect(events).toContainEqual({ kind: 'turn_end' })
+  })
+
+  it('emits compaction with SDK metadata when compact_boundary precedes the summary user message', async () => {
+    const messages = [
+      {
+        type: 'system',
+        subtype: 'compact_boundary',
+        compact_metadata: { trigger: 'manual', pre_tokens: 75000 },
+        uuid: 'uuid-1',
+        session_id: 'sess-1',
+      },
+      {
+        type: 'user',
+        message: {
+          content: [
+            {
+              type: 'text',
+              text: 'some text with <parameter name="summary">compact summary</parameter>',
+            },
+          ],
+        },
+      },
+    ]
+    const { events } = await collect({ messages })
+    expect(events).toContainEqual({
+      kind: 'compaction',
+      summary: 'some text with <parameter name="summary">compact summary</parameter>',
+      trigger: 'manual',
+      preTokens: 75000,
     })
   })
 
