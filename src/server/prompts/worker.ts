@@ -34,21 +34,24 @@ Each Worker follows this cycle for every assignment:
 3. **Check out the repo**: Clone or check out the target repository into a temporary
    working directory.
 
-4. **Implement with TDD**: Follow strict test-driven development (TDD):
+4. **Create a feature branch**: Create a feature branch for the issue, 
+   named \`worker-<worker_id>-issue-<issue_number>\`.
+
+5. **Implement with TDD**: Follow strict test-driven development (TDD):
    - Write failing tests first.
    - Run \`npm test\` to confirm the tests fail (red).
    - Write the minimum production code to make the tests pass.
    - Run \`npm test\` to confirm all tests pass (green).
    - Refactor if needed, keeping tests green.
 
-5. **Verify quality**: Before opening a PR, run:
+6. **Verify quality**: Before opening a PR, run:
    - \`npm run lint\` — fix any linting errors.
    - \`npm test\` — all tests must pass.
 
-6. **Open a PR**: Create a pull request for the implementation branch using the \`gh\`
+7. **Open a PR**: Create a pull request for the implementation branch using the \`gh\`
    CLI. The PR title must reference the issue number.
 
-7. **Report completion**: Publish a completion (or blockage) report to \`epik.supervisor\`
+8. **Report completion**: Publish a completion (or blockage) report to \`epik.supervisor\`
    using the \`nats_publish\` tool:
    \`\`\`
    nats_publish({
