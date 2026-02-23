@@ -1,5 +1,8 @@
 # Builder
 
+[![CI](https://github.com/epik-agent/console/actions/workflows/ci.yml/badge.svg)](https://github.com/epik-agent/console/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/epik-agent/console/graph/badge.svg?token=1V88WCNEGN)](https://codecov.io/gh/epik-agent/console)
+
 Builder is a multi-agent build console. Give it a GitHub repository with open
 issues and it autonomously implements them using a team of Claude Code agents
 coordinated over NATS.
