@@ -69,12 +69,22 @@ const poolPromise = createAgentPool()
 app.get('/api/issues', async (req, res) => {
   const repo = req.query['repo']
   if (typeof repo !== 'string' || !repo) {
-    res.status(400).json({ code: 'INVALID_REPO', message: 'Missing required query parameter: repo' } satisfies ApiError)
+    res
+      .status(400)
+      .json({
+        code: 'INVALID_REPO',
+        message: 'Missing required query parameter: repo',
+      } satisfies ApiError)
     return
   }
   const [owner, repoName] = repo.split('/')
   if (!owner || !repoName) {
-    res.status(400).json({ code: 'INVALID_REPO', message: 'repo must be in owner/repo format' } satisfies ApiError)
+    res
+      .status(400)
+      .json({
+        code: 'INVALID_REPO',
+        message: 'repo must be in owner/repo format',
+      } satisfies ApiError)
     return
   }
   try {
@@ -137,7 +147,12 @@ app.post('/api/start', async (_req, res) => {
 app.post('/api/message', async (req, res) => {
   const { agentId, text } = req.body as { agentId?: AgentId; text?: string }
   if (!agentId || !text) {
-    res.status(400).json({ code: 'MISSING_FIELDS', message: 'Missing required fields: agentId, text' } satisfies ApiError)
+    res
+      .status(400)
+      .json({
+        code: 'MISSING_FIELDS',
+        message: 'Missing required fields: agentId, text',
+      } satisfies ApiError)
     return
   }
   const pool = await poolPromise
@@ -156,7 +171,12 @@ app.post('/api/message', async (req, res) => {
 app.post('/api/interrupt', async (req, res) => {
   const { agentId } = req.body as { agentId?: AgentId }
   if (!agentId) {
-    res.status(400).json({ code: 'MISSING_FIELDS', message: 'Missing required field: agentId' } satisfies ApiError)
+    res
+      .status(400)
+      .json({
+        code: 'MISSING_FIELDS',
+        message: 'Missing required field: agentId',
+      } satisfies ApiError)
     return
   }
   const pool = await poolPromise

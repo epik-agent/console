@@ -108,7 +108,12 @@ export type Message = UserMessage | AssistantMessage | CompactionMessage
 
 /** Structured error response returned by all REST endpoints on failure. */
 export interface ApiError {
-  code: 'INVALID_REPO' | 'MISSING_FIELDS' | 'GITHUB_AUTH_ERROR' | 'GITHUB_ERROR' | 'NATS_UNAVAILABLE'
+  code:
+    | 'INVALID_REPO'
+    | 'MISSING_FIELDS'
+    | 'GITHUB_AUTH_ERROR'
+    | 'GITHUB_ERROR'
+    | 'NATS_UNAVAILABLE'
   message: string
 }
 
