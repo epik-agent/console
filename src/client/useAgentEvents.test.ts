@@ -300,6 +300,111 @@ describe('useAgentEvents', () => {
     expect(result.current.events['supervisor']).toHaveLength(0)
   })
 
+  it('delay doubles on consecutive failures', () => {
+    renderHook(() => useAgentEvents())
+    const ws0 = MockWebSocket.instances[0]
+
+    // attempt 0 → delay = 1000ms
+    act(() => {
+      ws0.open()
+      ws0.close()
+    })
+
+    act(() => {
+      vi.advanceTimersByTime(1000)
+    })
+
+    expect(MockWebSocket.instances).toHaveLength(2)
+
+    // attempt 1 → delay = 2000ms
+    act(() => {
+      MockWebSocket.instances[1].close()
+    })
+
+    // 1999ms is not enough
+    act(() => {
+      vi.advanceTimersByTime(1999)
+    })
+    expect(MockWebSocket.instances).toHaveLength(2)
+
+    // 1ms more crosses the 2000ms threshold
+    act(() => {
+      vi.advanceTimersByTime(1)
+    })
+    expect(MockWebSocket.instances).toHaveLength(3)
+  })
+
+  it('delay caps at MAX_DELAY_MS (30s)', () => {
+    renderHook(() => useAgentEvents())
+
+    // Advance through 5 failures (delays: 1s, 2s, 4s, 8s, 16s)
+    const delays = [1000, 2000, 4000, 8000, 16000]
+    for (const delay of delays) {
+      act(() => {
+        MockWebSocket.instances[MockWebSocket.instances.length - 1].close()
+      })
+      act(() => {
+        vi.advanceTimersByTime(delay)
+      })
+    }
+
+    // At attempt 5 the uncapped value would be 32000ms, but it should be capped at 30000ms.
+    // So closing now (attempt 5) should schedule a 30000ms delay.
+    const countBefore = MockWebSocket.instances.length
+    act(() => {
+      MockWebSocket.instances[MockWebSocket.instances.length - 1].close()
+    })
+
+    // 29999ms is not enough
+    act(() => {
+      vi.advanceTimersByTime(29999)
+    })
+    expect(MockWebSocket.instances).toHaveLength(countBefore)
+
+    // 1ms more crosses 30000ms
+    act(() => {
+      vi.advanceTimersByTime(1)
+    })
+    expect(MockWebSocket.instances).toHaveLength(countBefore + 1)
+  })
+
+  it('successful connection resets attempt counter', () => {
+    renderHook(() => useAgentEvents())
+    const ws0 = MockWebSocket.instances[0]
+
+    // attempt 0 → delay = 1000ms; open resets counter to 0
+    act(() => {
+      ws0.open()
+      ws0.close()
+    })
+
+    act(() => {
+      vi.advanceTimersByTime(1000)
+    })
+
+    // Open the second connection to reset the attempt counter
+    act(() => {
+      MockWebSocket.instances[1].open()
+    })
+
+    // Close it — attempt is back at 0, so delay should again be 1000ms
+    act(() => {
+      MockWebSocket.instances[1].close()
+    })
+
+    // 999ms is not enough
+    act(() => {
+      vi.advanceTimersByTime(999)
+    })
+    expect(MockWebSocket.instances).toHaveLength(2)
+
+    // 1ms more crosses 1000ms
+    act(() => {
+      vi.advanceTimersByTime(1)
+    })
+    expect(MockWebSocket.instances).toHaveLength(3)
+  })
+
   it('accumulates events for an unknown agentId using ?? [] fallback', () => {
     const { result } = renderHook(() => useAgentEvents())
     const ws = MockWebSocket.instances[0]
