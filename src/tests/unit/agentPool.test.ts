@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import type { AgentEvent, AgentId } from '../client/types.ts'
-import type { RunAgentOptions } from '../server/runner.ts'
-import { tick } from './test-fixtures.ts'
+import type { AgentEvent, AgentId } from '../../client/types.ts'
+import type { RunAgentOptions } from '../../server/runner.ts'
+import { tick } from '../test-fixtures.ts'
 
 // ---------------------------------------------------------------------------
 // Mock runner module
@@ -9,7 +9,7 @@ import { tick } from './test-fixtures.ts'
 
 let runAgentImpl: (opts: RunAgentOptions) => Promise<{ interrupt?: () => void }> = async () => ({})
 
-vi.mock('../server/runner.ts', () => ({
+vi.mock('../../server/runner.ts', () => ({
   runAgent: (opts: RunAgentOptions) => runAgentImpl(opts),
 }))
 
@@ -34,7 +34,7 @@ const mockNatsClient = {
   publish: vi.fn(),
 }
 
-vi.mock('../server/nats.ts', () => ({
+vi.mock('../../server/nats.ts', () => ({
   getNatsConnection: vi.fn(() => Promise.resolve(mockNatsClient)),
   TOPIC_SUPERVISOR: 'epik.supervisor',
   TOPIC_WORKER_0: 'epik.worker.0',
@@ -54,7 +54,7 @@ function triggerNatsMessage(topic: string, text: string) {
 }
 
 async function makePool() {
-  const { createAgentPool } = await import('../server/agentPool.ts')
+  const { createAgentPool } = await import('../../server/agentPool.ts')
   return createAgentPool()
 }
 

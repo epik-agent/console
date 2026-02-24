@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import request from 'supertest'
 import { WebSocket } from 'ws'
-import type { PoolState, ServerMessage } from '../client/types.ts'
-import { makeAgentPoolMock } from './test-fixtures.ts'
+import type { PoolState, ServerMessage } from '../../client/types.ts'
+import { makeAgentPoolMock } from '../test-fixtures.ts'
 
 // ---------------------------------------------------------------------------
 // Mock agentPool module
@@ -17,7 +17,7 @@ const mockPool: PoolState = [
 
 const { mockListeners, mockAgentPool } = makeAgentPoolMock(mockPool)
 
-vi.mock('../server/agentPool.ts', () => ({
+vi.mock('../../server/agentPool.ts', () => ({
   createAgentPool: vi.fn(() => Promise.resolve(mockAgentPool)),
 }))
 
@@ -30,7 +30,7 @@ const mockNatsClient = {
   subscribe: vi.fn(() => ({ unsubscribe: vi.fn() })),
 }
 
-vi.mock('../server/nats.ts', () => ({
+vi.mock('../../server/nats.ts', () => ({
   getNatsConnection: vi.fn(() => Promise.resolve(mockNatsClient)),
   TOPIC_SUPERVISOR: 'epik.supervisor',
   TOPIC_WORKER_0: 'epik.worker.0',
@@ -43,7 +43,7 @@ vi.mock('../server/nats.ts', () => ({
 // Mock github module
 // ---------------------------------------------------------------------------
 
-vi.mock('../server/github.ts', () => ({
+vi.mock('../../server/github.ts', () => ({
   loadIssueGraph: vi.fn(() =>
     Promise.resolve({
       nodes: [
@@ -64,13 +64,13 @@ vi.mock('../server/github.ts', () => ({
 // Test setup
 // ---------------------------------------------------------------------------
 
-let serverModule: typeof import('../server/index.ts')
+let serverModule: typeof import('../../server/index.ts')
 
 beforeEach(async () => {
   vi.resetModules()
   mockListeners.clear()
   mockAgentPool.getPool.mockReturnValue(mockPool)
-  serverModule = await import('../server/index.ts')
+  serverModule = await import('../../server/index.ts')
 })
 
 afterEach(() => {
@@ -113,7 +113,7 @@ describe('GET /api/issues', () => {
   })
 
   it('returns 500 with a GitHub token message when loadIssueGraph rejects with 401', async () => {
-    const { loadIssueGraph } = await import('../server/github.ts')
+    const { loadIssueGraph } = await import('../../server/github.ts')
     vi.mocked(loadIssueGraph).mockRejectedValueOnce(new Error('Request failed with status 401'))
 
     const res = await request(serverModule.app).get('/api/issues?repo=owner/repo')
@@ -123,7 +123,7 @@ describe('GET /api/issues', () => {
   })
 
   it('returns 500 with a GitHub token message when loadIssueGraph rejects with Bad credentials', async () => {
-    const { loadIssueGraph } = await import('../server/github.ts')
+    const { loadIssueGraph } = await import('../../server/github.ts')
     vi.mocked(loadIssueGraph).mockRejectedValueOnce(new Error('Bad credentials'))
 
     const res = await request(serverModule.app).get('/api/issues?repo=owner/repo')
@@ -133,7 +133,7 @@ describe('GET /api/issues', () => {
   })
 
   it('returns 500 with a GitHub token message when loadIssueGraph rejects with GH_TOKEN error', async () => {
-    const { loadIssueGraph } = await import('../server/github.ts')
+    const { loadIssueGraph } = await import('../../server/github.ts')
     vi.mocked(loadIssueGraph).mockRejectedValueOnce(new Error('GH_TOKEN not set'))
 
     const res = await request(serverModule.app).get('/api/issues?repo=owner/repo')
@@ -143,7 +143,7 @@ describe('GET /api/issues', () => {
   })
 
   it('returns 500 with a GitHub token message when loadIssueGraph rejects with authentication error', async () => {
-    const { loadIssueGraph } = await import('../server/github.ts')
+    const { loadIssueGraph } = await import('../../server/github.ts')
     vi.mocked(loadIssueGraph).mockRejectedValueOnce(new Error('authentication required'))
 
     const res = await request(serverModule.app).get('/api/issues?repo=owner/repo')
@@ -153,7 +153,7 @@ describe('GET /api/issues', () => {
   })
 
   it('returns 500 with the raw error message for non-auth errors', async () => {
-    const { loadIssueGraph } = await import('../server/github.ts')
+    const { loadIssueGraph } = await import('../../server/github.ts')
     vi.mocked(loadIssueGraph).mockRejectedValueOnce(new Error('Network timeout'))
 
     const res = await request(serverModule.app).get('/api/issues?repo=owner/repo')
@@ -171,7 +171,7 @@ describe('POST /api/start', () => {
   })
 
   it('returns 500 when getNatsConnection rejects', async () => {
-    const { getNatsConnection } = await import('../server/nats.ts')
+    const { getNatsConnection } = await import('../../server/nats.ts')
     vi.mocked(getNatsConnection).mockRejectedValueOnce(new Error('NATS unreachable'))
 
     const res = await request(serverModule.app).post('/api/start').send({})

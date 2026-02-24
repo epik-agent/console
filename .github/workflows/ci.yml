@@ -13,7 +13,18 @@ jobs:
       - uses: ./.github/actions/setup-pnpm
       - uses: ./.github/actions/lint-js
 
-  test:
+  test-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-pnpm
+      - uses: ./.github/actions/run-tests
+        with:
+          projects: client unit
+          coverage: 'true'
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}
+
+  test-integration:
     runs-on: ubuntu-latest
     services:
       nats:
@@ -25,8 +36,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-pnpm
-      - run: pnpm exec vitest run --coverage
-      - uses: codecov/codecov-action@v5
+      - uses: ./.github/actions/run-tests
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage/lcov.info
+          projects: integration

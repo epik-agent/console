@@ -15,7 +15,6 @@ export default defineConfig({
     },
   },
   test: {
-    environment: 'jsdom',
     globals: true,
     setupFiles: './src/test-setup.ts',
     coverage: {
@@ -23,5 +22,35 @@ export default defineConfig({
       reporter: ['text', 'lcov'],
       exclude: ['src/main.tsx'],
     },
+    projects: [
+      {
+        // Client-side: colocated component/hook/util tests
+        test: {
+          name: 'client',
+          include: ['src/client/**/*.test.{ts,tsx}'],
+          environment: 'jsdom',
+          globals: true,
+          setupFiles: './src/test-setup.ts',
+        },
+      },
+      {
+        // Server unit tests: no real external services
+        test: {
+          name: 'unit',
+          include: ['src/tests/unit/**/*.test.ts'],
+          environment: 'node',
+          globals: true,
+        },
+      },
+      {
+        // Integration tests: require NATS
+        test: {
+          name: 'integration',
+          include: ['src/tests/integration/**/*.test.ts'],
+          environment: 'node',
+          globals: true,
+        },
+      },
+    ],
   },
 })

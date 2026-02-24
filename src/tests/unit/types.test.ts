@@ -17,7 +17,7 @@ import type {
   AssistantMessage,
   CompactionMessage,
   Message,
-} from '../client/types.ts'
+} from '../../client/types.ts'
 
 describe('types', () => {
   it('AgentEvent has the correct variants', () => {
