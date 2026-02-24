@@ -4,9 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "nats": "bash scripts/ensure-nats.sh",
-    "dev": "npm run nats && vite",
-    "dev:full": "npm run nats && concurrently \"vite\" \"npm run server\"",
+    "dev": "concurrently \"vite\" \"npm run server\"",
     "server": "tsx watch src/server/index.ts",
     "build": "tsc -b && vite build && npm run build:server",
     "build:client": "vite build",
@@ -15,7 +13,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "preview": "vite preview",
-    "test": "npm run nats && vitest run"
+    "test": "vitest run"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.49",

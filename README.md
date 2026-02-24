@@ -7,56 +7,51 @@ Console is a multi-agent build console. Give it a GitHub repository with open
 issues and it autonomously implements them using a team of Claude Code agents
 coordinated over NATS.
 
-## Quick start with Docker
-
-The easiest way to run Console is with Docker Compose, which starts NATS and
-the application server automatically.
-
-### Without GitHub access
-
-```bash
-docker compose up
-```
-
-Open http://localhost:5173 in your browser. The dashboard loads and you can
-see the empty issue graph and agent console. Trying to load a repository will
-show a clear error: _"GitHub token not configured"_.
-
-### With GitHub access
-
-```bash
-npm run docker
-```
-
-This pulls your token from the `gh` CLI keyring automatically
-(`GH_TOKEN=$(gh auth token) docker compose up`). Requires `gh auth login`
-to have been run at least once.
-
-Open http://localhost:5173 and enter `epik-agent/console` (or any
-`owner/repo`) in the toolbar. Click **Load** to fetch the issue graph.
-
-### What you should see
-
-- The toolbar at the top with a repository input field and **Load** / **Start** buttons.
-- The issue dependency graph in the top half of the screen (empty until a repo is loaded).
-- The agent console tabs (Supervisor, Worker 0/1/2) in the bottom half.
-- After loading a repo, colored nodes appear in the graph — one per open issue.
-
 ## Local development
 
 ### Prerequisites
 
 - Node.js ≥ 20
-- `nats-server` binary on PATH (`brew install nats-server` on macOS)
+- Docker (for NATS)
 - `gh` CLI authenticated (`gh auth login`)
 
-### Start
+### NATS
+
+Console requires a NATS server. A custom Docker image lives in `nats/` — it
+enables the WebSocket endpoint and HTTP monitoring alongside the standard client
+port. Build it once and leave the container running; you normally won't need to
+restart it between sessions.
 
 ```bash
-nats-server &        # start NATS in the background
-npm install
-npm run dev          # Vite on :5173, Express on :3001
+docker build -t epik-nats nats/
+docker run -d --name epik-nats \
+  -p 4222:4222 \
+  -p 8222:8222 \
+  -p 9222:9222 \
+  epik-nats
 ```
+
+| Port | Purpose                                 |
+| ---- | --------------------------------------- |
+| 4222 | NATS client (TCP)                       |
+| 8222 | HTTP monitoring — http://localhost:8222 |
+| 9222 | WebSocket client                        |
+
+To stop and remove the container:
+
+```bash
+docker rm -f epik-nats
+```
+
+### App
+
+```bash
+npm install
+npm run dev
+```
+
+`npm run dev` starts Vite on `:5173` and the Express server on `:3001`
+concurrently, both with hot reload.
 
 Open http://localhost:5173/?repo=owner/repo.
 
@@ -64,75 +59,38 @@ Open http://localhost:5173/?repo=owner/repo.
 
 | Script                 | Description                                       |
 | ---------------------- | ------------------------------------------------- |
-| `npm run docker`       | Start Docker Compose with GH token from keyring   |
 | `npm run dev`          | Vite dev server + Express via tsx (hot reload)    |
 | `npm run server`       | Express server only (tsx watch)                   |
 | `npm run build`        | Type-check + Vite frontend bundle + server bundle |
 | `npm run build:server` | esbuild server bundle only → `dist/server.js`     |
-| `npm run lint`         | ESLint                                            |
-| `npm run format`       | Prettier                                          |
-| `npm test`             | Vitest unit tests                                 |
+| `npm run lint`         | ESLint + tsc type-check                           |
+| `npm run format`       | Prettier (write)                                  |
+| `npm run format:check` | Prettier (check only)                             |
+| `npm test`             | Vitest (single run)                               |
 
-### Build strategy
+## Build
 
-There are three build modes:
-
-**Development** (`npm run dev`): no build step. Vite serves the frontend with
-hot module replacement on `:5173`. The Express server runs directly from
-TypeScript source via `tsx watch` on `:3001`.
-
-**Production build** (`npm run build`): three sequential steps:
+`npm run build` runs three steps in sequence:
 
 1. `tsc -b` — type-checks the whole project (no output files)
 2. `vite build` — bundles the React frontend into `dist/`
 3. `esbuild` — bundles the Express server into `dist/server.js`, with
    runtime dependencies (`express`, `ws`, `nats`, `@anthropic-ai/claude-agent-sdk`)
-   left as externals so they are resolved from `node_modules` at runtime
+   left as externals
 
-**Docker** (`docker compose up --build`): runs the production build inside the
-build stage, then copies only `dist/` into the lean production image.
-`node_modules` on the host is excluded via `.dockerignore` so the container
-always installs fresh Linux-compatible binaries.
+In development `dist/` need not exist. The server serves static files from
+`dist/` when it finds them there; Vite's dev server handles the frontend
+otherwise.
 
-Docker layer caching means the slow steps (`npm ci`, installing `gh`) are only
-re-run when `package-lock.json` changes. Changing source files only re-runs
-`COPY . .` and `npm run build` (a few seconds).
+## CI
 
-### Static file serving
+CI runs on GitHub Actions. The NATS service container uses the same image as
+local dev, published to GHCR by `publish-nats.yml` whenever `nats/` changes on
+`main`.
 
-In production the Express server serves the Vite-built frontend from the same
-`dist/` directory that contains `server.js`. This is controlled by the
-`SERVE_STATIC` environment variable, which the Dockerfile sets to `"1"`.
-
-The server code is:
-
-```ts
-if (process.env['SERVE_STATIC']) {
-  const distDir = resolve(fileURLToPath(import.meta.url), '..')
-  app.use(express.static(distDir))
-}
-```
-
-`import.meta.url` points to `dist/server.js` at runtime, so `resolve(..., '..')`
-is the `dist/` directory — exactly where Vite wrote `index.html` and `assets/`.
-
-`SERVE_STATIC` is intentionally not set in development or tests. In development,
-Vite runs its own server. In tests, leaving it unset means the static middleware
-is never registered regardless of whether a `dist/` directory exists on disk,
-eliminating any test-ordering sensitivity to local build state.
-
-### GitHub token resolution
-
-The server resolves the GitHub token used by the agent workers in this order:
-
-1. `GH_TOKEN` environment variable — set explicitly in Docker (`npm run docker`
-   injects it via `gh auth token`)
-2. `gh auth token` CLI — called only when `~/.config/gh` exists, indicating the
-   CLI has been authenticated at least once
-
-Checking for the config directory before calling `gh auth token` avoids the
-`no oauth token found for github.com` stderr noise that `gh` emits in CI
-environments where it is installed but never authenticated.
+The `gh` CLI is used to call the GitHub API. In CI it picks up credentials from
+the `GH_TOKEN` environment variable automatically. Locally it uses whatever
+account is configured via `gh auth login`.
 
 ## Architecture
 
