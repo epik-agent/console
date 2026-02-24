@@ -145,7 +145,7 @@ describe('App', () => {
   describe('toolbar structure', () => {
     it('renders the brand mark and name', () => {
       render(<App />)
-      expect(screen.getByText(/epi/)).toBeInTheDocument()
+      expect(screen.getByText('Epik')).toBeInTheDocument()
     })
 
     it('renders a connection badge', () => {

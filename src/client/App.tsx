@@ -185,9 +185,7 @@ export default function App() {
             <circle cx="8" cy="17" r="2" fill="currentColor" />
             <circle cx="14" cy="17" r="1.6" fill="var(--brand-accent-base)" opacity="0.7" />
           </svg>
-          <span>
-            epi<span style={{ fontStyle: 'italic' }}>k</span>
-          </span>
+          <span>Epik</span>
         </div>
 
         <form onSubmit={handleRepoSubmit} className="toolbar-form">
