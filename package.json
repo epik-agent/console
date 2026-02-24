@@ -4,10 +4,10 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"vite\" \"npm run server\"",
+    "dev": "concurrently \"vite\" \"pnpm run server\"",
     "stop": "lsof -ti:3001 -ti:5173 | xargs kill -9 2>/dev/null; true",
     "server": "tsx watch src/server/index.ts",
-    "build": "tsc -b && vite build && npm run build:server",
+    "build": "tsc -b && vite build && pnpm run build:server",
     "build:client": "vite build",
     "build:server": "esbuild src/server/index.ts --bundle --platform=node --format=esm --outfile=dist/server.js --external:@anthropic-ai/claude-agent-sdk --external:nats --external:express --external:ws",
     "lint": "tsc --noEmit && eslint .",
