@@ -130,7 +130,10 @@ export function useAgentEvents(): AgentEventsState {
       if (reconnectTimer.current !== null) {
         clearTimeout(reconnectTimer.current)
       }
-      wsRef.current?.close()
+      const ws = wsRef.current
+      if (ws && ws.readyState !== WebSocket.CONNECTING) {
+        ws.close()
+      }
     }
   }, [])
 
