@@ -184,6 +184,136 @@ describe('App', () => {
     expect(issuesCalls).toHaveLength(0)
   })
 
+  it('Load button is disabled when input is empty', () => {
+    render(<App />)
+    const loadButton = screen.getByRole('button', { name: /load/i })
+    expect(loadButton).toBeDisabled()
+  })
+
+  it('Load button is disabled when input has no slash', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const input = screen.getByPlaceholderText(/owner\/repo/i)
+    await user.clear(input)
+    await user.type(input, 'noslash')
+    expect(screen.getByRole('button', { name: /load/i })).toBeDisabled()
+  })
+
+  it('Load button is enabled when input contains a slash', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const input = screen.getByPlaceholderText(/owner\/repo/i)
+    await user.clear(input)
+    await user.type(input, 'owner/repo')
+    expect(screen.getByRole('button', { name: /load/i })).not.toBeDisabled()
+  })
+
+  it('Load button shows busy state while fetch is in flight', async () => {
+    let resolveFetch!: (value: { ok: boolean; json: () => Promise<{ nodes: never[] }> }) => void
+    mockFetch.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveFetch = resolve
+      }),
+    )
+
+    const user = userEvent.setup()
+    render(<App />)
+    const input = screen.getByPlaceholderText(/owner\/repo/i)
+    await user.clear(input)
+    await user.type(input, 'owner/repo')
+    await user.click(screen.getByRole('button', { name: /load/i }))
+
+    const loadButton = screen.getByRole('button', { name: /load/i })
+    expect(loadButton).toBeDisabled()
+    expect(loadButton).toHaveClass('btn--busy')
+
+    await act(async () => {
+      resolveFetch({ ok: true, json: async () => ({ nodes: [] }) })
+    })
+  })
+
+  it('Load button clears busy state after fetch resolves', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const input = screen.getByPlaceholderText(/owner\/repo/i)
+    await user.clear(input)
+    await user.type(input, 'owner/repo')
+    await user.click(screen.getByRole('button', { name: /load/i }))
+
+    await act(async () => {})
+
+    const loadButton = screen.getByRole('button', { name: /load/i })
+    expect(loadButton).not.toHaveClass('btn--busy')
+    expect(loadButton).not.toBeDisabled()
+  })
+
+  it('Start button shows busy state after click until running becomes true', async () => {
+    const useAgentEventsModule = await import('./useAgentEvents')
+    const mockReturn = {
+      events: makeEvents(),
+      pool: { running: false, agents: [] } as PoolState,
+      connectionStatus: 'connected' as const,
+      sendMessage: vi.fn(),
+      interrupt: vi.fn(),
+    }
+    vi.spyOn(useAgentEventsModule, 'useAgentEvents').mockReturnValue(mockReturn)
+
+    const user = userEvent.setup()
+    const { rerender } = render(<App />)
+
+    // Load a repo first to enable Start
+    const input = screen.getByPlaceholderText(/owner\/repo/i)
+    await user.clear(input)
+    await user.type(input, 'owner/repo')
+    await user.click(screen.getByRole('button', { name: /load/i }))
+    await act(async () => {})
+
+    const startButton = screen.getByRole('button', { name: /start/i })
+    await user.click(startButton)
+
+    expect(startButton).toHaveClass('btn--busy')
+    expect(startButton).toBeDisabled()
+
+    // Simulate running becoming true
+    vi.spyOn(useAgentEventsModule, 'useAgentEvents').mockReturnValue({
+      ...mockReturn,
+      pool: { running: true, agents: [] } as PoolState,
+    })
+    rerender(<App />)
+
+    expect(screen.getByRole('button', { name: /start/i })).not.toHaveClass('btn--busy')
+  })
+
+  it('Stop button shows busy state after click until running becomes false', async () => {
+    const useAgentEventsModule = await import('./useAgentEvents')
+    const mockReturn = {
+      events: makeEvents(),
+      pool: { running: true, agents: [] } as PoolState,
+      connectionStatus: 'connected' as const,
+      sendMessage: vi.fn(),
+      interrupt: vi.fn(),
+    }
+    vi.spyOn(useAgentEventsModule, 'useAgentEvents').mockReturnValue(mockReturn)
+
+    const user = userEvent.setup()
+    const { rerender } = render(<App />)
+
+    const stopButton = screen.getByRole('button', { name: /stop/i })
+    await user.click(stopButton)
+
+    expect(stopButton).toHaveClass('btn--busy')
+    expect(stopButton).toBeDisabled()
+
+    // Simulate running becoming false
+    vi.spyOn(useAgentEventsModule, 'useAgentEvents').mockReturnValue({
+      ...mockReturn,
+      pool: { running: false, agents: [] } as PoolState,
+    })
+    rerender(<App />)
+
+    expect(screen.getByRole('button', { name: /stop/i })).not.toHaveClass('btn--busy')
+  })
+
   it('unmounts cleanly while a fetch is in-flight (cancelled flag prevents stale setState)', async () => {
     let resolveFetch!: (value: { ok: boolean; json: () => Promise<{ nodes: never[] }> }) => void
     mockFetch.mockReturnValueOnce(

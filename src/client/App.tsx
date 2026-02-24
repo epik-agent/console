@@ -16,6 +16,11 @@ function repoFromUrl(): string {
   return params.get('repo') ?? ''
 }
 
+function isValidRepo(value: string): boolean {
+  const t = value.trim()
+  return t.length > 0 && t.includes('/')
+}
+
 const EMPTY_GRAPH: IssueGraphType = { nodes: [] }
 
 const CONNECTION_LABELS: Record<ConnectionStatus, string> = {
@@ -93,25 +98,43 @@ export default function App() {
   const [repoInput, setRepoInput] = useState<string>(repoFromUrl)
   const [graph, setGraph] = useState<IssueGraphType>(EMPTY_GRAPH)
   const pendingRef = useRef(false)
+  const [loadingGraph, setLoadingGraph] = useState(false)
+  const [startClickedWhileNotRunning, setStartClickedWhileNotRunning] = useState(false)
+  const [stopClickedWhileRunning, setStopClickedWhileRunning] = useState(false)
+  const startTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const stopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { running } = pool
+
+  // Derive effective busy states: pending is only active until the running state flips
+  const startPending = startClickedWhileNotRunning && !running
+  const stopPending = stopClickedWhileRunning && running
 
   // Fetch issue graph when repo changes
   useEffect(() => {
     if (!repo) return
     let cancelled = false
     pendingRef.current = true
-    fetch(`${apiBase}/api/issues?repo=${encodeURIComponent(repo)}`)
+    const controller = new AbortController()
+    fetch(`${apiBase}/api/issues?repo=${encodeURIComponent(repo)}`, { signal: controller.signal })
       .then((r) => r.json())
       .then((data: IssueGraphType) => {
-        if (!cancelled) setGraph(data)
+        if (!cancelled) {
+          setGraph(data)
+          setLoadingGraph(false)
+        }
       })
       .catch(() => {
-        if (!cancelled) setGraph(EMPTY_GRAPH)
+        if (!cancelled) {
+          setGraph(EMPTY_GRAPH)
+          setLoadingGraph(false)
+        }
       })
       .finally(() => {
         pendingRef.current = false
       })
     return () => {
       cancelled = true
+      controller.abort()
     }
   }, [repo, apiBase])
 
@@ -120,6 +143,7 @@ export default function App() {
       e.preventDefault()
       const trimmed = repoInput.trim()
       if (trimmed) {
+        setLoadingGraph(true)
         setRepo(trimmed)
         pushRepo(trimmed)
       }
@@ -127,9 +151,9 @@ export default function App() {
     [repoInput, pushRepo],
   )
 
-  const { running } = pool
-
   const handleStart = useCallback(() => {
+    setStartClickedWhileNotRunning(true)
+    startTimeoutRef.current = setTimeout(() => setStartClickedWhileNotRunning(false), 10_000)
     void fetch(`${apiBase}/api/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -138,6 +162,8 @@ export default function App() {
   }, [repo, apiBase])
 
   const handleStop = useCallback(() => {
+    setStopClickedWhileRunning(true)
+    stopTimeoutRef.current = setTimeout(() => setStopClickedWhileRunning(false), 10_000)
     void fetch(`${apiBase}/api/stop`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -216,23 +242,27 @@ export default function App() {
               <option key={r} value={r} />
             ))}
           </datalist>
-          <button type="submit" className="btn btn-secondary">
+          <button
+            type="submit"
+            className={`btn btn-secondary${loadingGraph ? ' btn--busy' : ''}`}
+            disabled={!isValidRepo(repoInput) || loadingGraph}
+          >
             Load
           </button>
         </form>
 
         <button
-          className="btn btn-primary"
+          className={`btn btn-primary${startPending ? ' btn--busy' : ''}`}
           onClick={handleStart}
-          disabled={!repo || connectionStatus !== 'connected' || running}
+          disabled={!repo || connectionStatus !== 'connected' || running || startPending}
         >
           Start
         </button>
 
         <button
-          className="btn btn-danger"
+          className={`btn btn-danger${stopPending ? ' btn--busy' : ''}`}
           onClick={handleStop}
-          disabled={!running || connectionStatus !== 'connected'}
+          disabled={!running || connectionStatus !== 'connected' || stopPending}
         >
           Stop
         </button>

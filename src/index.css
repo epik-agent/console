@@ -352,6 +352,30 @@ body {
   color: var(--brand-text-primary);
 }
 
+.btn--busy {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.btn--busy::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: btn-spin 0.7s linear infinite;
+  color: inherit;
+}
+
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ---- Connection status ---- */
 .connection-badge {
   display: inline-flex;
