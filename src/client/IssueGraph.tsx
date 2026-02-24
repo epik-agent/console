@@ -156,7 +156,7 @@ export default function IssueGraph({ graph, events, agentIssueMap, repo }: Issue
     ctx.textBaseline = 'middle'
     ctx.fillText(`#${n.id}`, n.x ?? 0, (n.y ?? 0) - 6)
     const title = n.label.length > 18 ? n.label.slice(0, 17) + '\u2026' : n.label
-    ctx.fillStyle = 'rgba(255,255,255,0.6)'
+    ctx.fillStyle = color
     ctx.font = `${9 / globalScale}px sans-serif`
     ctx.fillText(title, n.x ?? 0, (n.y ?? 0) + 7)
     ctx.restore()
