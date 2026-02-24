@@ -1,0 +1,15 @@
+name: Lint JavaScript / TypeScript
+description: >
+  Run tsc type-check, ESLint, and Prettier format-check. Requires node_modules
+  to already be installed (call setup-pnpm first).
+
+runs:
+  using: composite
+  steps:
+    - name: Lint
+      run: pnpm lint
+      shell: bash
+
+    - name: Format check
+      run: pnpm format:check
+      shell: bash

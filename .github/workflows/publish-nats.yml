@@ -15,13 +15,9 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
-      - uses: docker/login-action@v3
+      - uses: ./.github/actions/publish-docker
         with:
-          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
-        with:
           context: nats
-          push: true
           tags: ghcr.io/epik-agent/console/nats:latest

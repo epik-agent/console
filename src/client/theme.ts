@@ -4,35 +4,68 @@
  */
 
 export interface BgTokens {
-  root: string; surface: string; raised: string; input: string;
-  bar: string; hover: string; active: string; overlay: string;
+  root: string
+  surface: string
+  raised: string
+  input: string
+  bar: string
+  hover: string
+  active: string
+  overlay: string
 }
 export interface TextTokens {
-  primary: string; secondary: string; muted: string; faint: string; inverse: string;
+  primary: string
+  secondary: string
+  muted: string
+  faint: string
+  inverse: string
 }
 export interface AccentTokens {
-  base: string; hover: string; muted: string; onAccent: string;
+  base: string
+  hover: string
+  muted: string
+  onAccent: string
 }
 export interface SemanticTokens {
-  success: string; successMuted: string; warning: string; warningMuted: string;
-  error: string; errorMuted: string; info: string;
+  success: string
+  successMuted: string
+  warning: string
+  warningMuted: string
+  error: string
+  errorMuted: string
+  info: string
 }
-export interface BorderTokens { default: string; strong: string; }
-export interface GraphTokens { closed: string; open: string; active: string; link: string; }
+export interface BorderTokens {
+  default: string
+  strong: string
+}
+export interface GraphTokens {
+  closed: string
+  open: string
+  active: string
+  link: string
+}
 
 export interface Palette {
-  bg: BgTokens; text: TextTokens; accent: AccentTokens;
-  semantic: SemanticTokens; border: BorderTokens; graph: GraphTokens;
+  bg: BgTokens
+  text: TextTokens
+  accent: AccentTokens
+  semantic: SemanticTokens
+  border: BorderTokens
+  graph: GraphTokens
 }
 
 export interface Brand {
-  name: string;
-  wordmark: string;
-  wordmarkNote: string;
-  tagline: string;
-  copyright: string;
-  fonts: { sans: { family: string; weights: number[]; source: string }; mono: { family: string; weights: number[]; source: string } };
-  palette: { dark: Palette; light: Palette };
+  name: string
+  wordmark: string
+  wordmarkNote: string
+  tagline: string
+  copyright: string
+  fonts: {
+    sans: { family: string; weights: number[]; source: string }
+    mono: { family: string; weights: number[]; source: string }
+  }
+  palette: { dark: Palette; light: Palette }
 }
 
 /** The two supported colour modes. */

@@ -1,0 +1,37 @@
+name: Setup pnpm
+description: >
+  Checkout, configure Node.js, install pnpm, restore the node_modules cache,
+  and run pnpm install when the cache is cold.
+
+inputs:
+  node-version:
+    description: Node.js version to install
+    required: false
+    default: '20'
+  pnpm-version:
+    description: pnpm version to install
+    required: false
+    default: '10'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - uses: pnpm/action-setup@v4
+      with:
+        version: ${{ inputs.pnpm-version }}
+
+    - uses: actions/cache@v4
+      id: cache-node-modules
+      with:
+        path: node_modules
+        key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+    - if: steps.cache-node-modules.outputs.cache-hit != 'true'
+      run: pnpm install --frozen-lockfile
+      shell: bash

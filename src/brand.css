@@ -5,7 +5,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap');
 
 :root,
-[data-theme="dark"] {
+[data-theme='dark'] {
   --brand-font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
   --brand-font-mono: 'Geist Mono', ui-monospace, monospace;
   --brand-bg-root: #0a0a0a;
@@ -15,7 +15,7 @@
   --brand-bg-bar: #0e0e0e;
   --brand-bg-hover: #1f1f1f;
   --brand-bg-active: #262626;
-  --brand-bg-overlay: rgba(0, 0, 0, 0.60);
+  --brand-bg-overlay: rgba(0, 0, 0, 0.6);
   --brand-text-primary: #ededed;
   --brand-text-secondary: #a0a0a0;
   --brand-text-muted: #666666;
@@ -37,10 +37,10 @@
   --brand-graph-closed: #34d399;
   --brand-graph-open: #f5a623;
   --brand-graph-active: #00e599;
-  --brand-graph-link: rgba(255, 255, 255, 0.10);
+  --brand-graph-link: rgba(255, 255, 255, 0.1);
 }
 
-[data-theme="light"] {
+[data-theme='light'] {
   --brand-font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
   --brand-font-mono: 'Geist Mono', ui-monospace, monospace;
   --brand-bg-root: #fafafa;
@@ -58,12 +58,12 @@
   --brand-text-inverse: #ededed;
   --brand-accent-base: #00b377;
   --brand-accent-hover: #009966;
-  --brand-accent-muted: rgba(0, 179, 119, 0.10);
+  --brand-accent-muted: rgba(0, 179, 119, 0.1);
   --brand-accent-onAccent: #ffffff;
   --brand-semantic-success: #00b377;
-  --brand-semantic-successMuted: rgba(0, 179, 119, 0.10);
+  --brand-semantic-successMuted: rgba(0, 179, 119, 0.1);
   --brand-semantic-warning: #d4940a;
-  --brand-semantic-warningMuted: rgba(212, 148, 10, 0.10);
+  --brand-semantic-warningMuted: rgba(212, 148, 10, 0.1);
   --brand-semantic-error: #dc2626;
   --brand-semantic-errorMuted: rgba(220, 38, 38, 0.08);
   --brand-semantic-info: #525252;
@@ -76,7 +76,7 @@
 }
 
 @media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
+  :root:not([data-theme='dark']) {
     --brand-bg-root: #fafafa;
     --brand-bg-surface: #f0f0f0;
     --brand-bg-raised: #e5e5e5;
@@ -92,12 +92,12 @@
     --brand-text-inverse: #ededed;
     --brand-accent-base: #00b377;
     --brand-accent-hover: #009966;
-    --brand-accent-muted: rgba(0, 179, 119, 0.10);
+    --brand-accent-muted: rgba(0, 179, 119, 0.1);
     --brand-accent-onAccent: #ffffff;
     --brand-semantic-success: #00b377;
-    --brand-semantic-successMuted: rgba(0, 179, 119, 0.10);
+    --brand-semantic-successMuted: rgba(0, 179, 119, 0.1);
     --brand-semantic-warning: #d4940a;
-    --brand-semantic-warningMuted: rgba(212, 148, 10, 0.10);
+    --brand-semantic-warningMuted: rgba(212, 148, 10, 0.1);
     --brand-semantic-error: #dc2626;
     --brand-semantic-errorMuted: rgba(220, 38, 38, 0.08);
     --brand-semantic-info: #525252;
