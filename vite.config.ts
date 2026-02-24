@@ -12,8 +12,13 @@ export default defineConfig({
         target: 'ws://localhost:3001',
         ws: true,
         configure: (proxy) => {
-          proxy.on('error', () => {
-            // Suppress transient EPIPE/connection errors from the WS proxy
+          // Intercept proxyReqWs before Vite adds its socket error logger,
+          // then remove all socket error listeners so the EPIPE isn't logged.
+          // EPIPE is safe to ignore here: it means the browser closed the WS
+          // connection before the proxy finished writing, which is normal during
+          // HMR reconnects and page reloads.
+          proxy.on('proxyReqWs', (_proxyReq, _req, socket) => {
+            setImmediate(() => socket.removeAllListeners('error'))
           })
         },
       },
