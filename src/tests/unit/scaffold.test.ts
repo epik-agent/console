@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 
-vi.mock('../server/nats.ts', () => ({
+vi.mock('../../server/nats.ts', () => ({
   getNatsConnection: vi.fn(() => Promise.resolve({ publish: vi.fn(), subscribe: vi.fn() })),
   TOPIC_SUPERVISOR: 'epik.supervisor',
   TOPIC_WORKER_0: 'epik.worker.0',
@@ -9,7 +9,7 @@ vi.mock('../server/nats.ts', () => ({
   TOPIC_LOG: 'epik.log',
 }))
 
-vi.mock('../server/agentPool.ts', () => ({
+vi.mock('../../server/agentPool.ts', () => ({
   createAgentPool: vi.fn(() =>
     Promise.resolve({
       getPool: vi.fn(() => []),
@@ -20,7 +20,7 @@ vi.mock('../server/agentPool.ts', () => ({
   ),
 }))
 
-import { app } from '../server'
+import { app } from '../../server'
 
 describe('project scaffold', () => {
   it('exports an express app', () => {

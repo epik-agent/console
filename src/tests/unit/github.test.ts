@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { loadIssueGraph, getPRStatus, runGhCommand } from '../server/github.ts'
+import { loadIssueGraph, getPRStatus, runGhCommand } from '../../server/github.ts'
 
 // ---------------------------------------------------------------------------
 // Fixtures

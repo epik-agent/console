@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { supervisorPrompt } from '../server/prompts/supervisor.ts'
-import { workerPrompt } from '../server/prompts/worker.ts'
+import { supervisorPrompt } from '../../server/prompts/supervisor.ts'
+import { workerPrompt } from '../../server/prompts/worker.ts'
 
 describe('supervisorPrompt', () => {
   it('exports a non-empty string', () => {

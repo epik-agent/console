@@ -1,0 +1,33 @@
+name: Run tests
+description: Run vitest for the given project(s) with optional coverage upload.
+
+inputs:
+  projects:
+    description: Space-separated list of project names (e.g. "client unit")
+    required: true
+  coverage:
+    description: Whether to collect and upload coverage
+    default: 'false'
+  codecov-token:
+    description: Codecov token (required when coverage is true)
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Run tests
+      run: |
+        ARGS=""
+        for p in ${{ inputs.projects }}; do ARGS="$ARGS --project $p"; done
+        if [ "${{ inputs.coverage }}" = "true" ]; then
+          pnpm exec vitest run --coverage $ARGS
+        else
+          pnpm exec vitest run $ARGS
+        fi
+      shell: bash
+
+    - if: inputs.coverage == 'true'
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ inputs.codecov-token }}
+        files: coverage/lcov.info

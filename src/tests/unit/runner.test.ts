@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { collect, makeIterator, readProjectFile } from './test-fixtures.ts'
+import { collect, makeIterator, readProjectFile } from '../test-fixtures.ts'
 
 // ---------------------------------------------------------------------------
 // githubToken: catch-block coverage
@@ -39,7 +39,7 @@ describe('githubToken catch block', () => {
     const actualZod = await vi.importActual<typeof import('zod')>('zod')
     vi.doMock('zod', () => actualZod)
 
-    const { runAgent } = await import('../server/runner.ts')
+    const { runAgent } = await import('../../server/runner.ts')
     const events: string[] = []
     await runAgent({
       config: { model: 'claude-sonnet-4-6', cwd: '/tmp', systemPrompt: undefined },

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import request from 'supertest'
 import { WebSocket } from 'ws'
-import type { PoolState, ServerMessage } from '../client/types.ts'
-import { makeAgentPoolMock } from './test-fixtures.ts'
+import type { PoolState, ServerMessage } from '../../client/types.ts'
+import { makeAgentPoolMock } from '../test-fixtures.ts'
 
 // ---------------------------------------------------------------------------
 // Mock agentPool module
@@ -17,7 +17,7 @@ const mockPool: PoolState = [
 
 const { mockListeners, mockAgentPool } = makeAgentPoolMock(mockPool)
 
-vi.mock('../server/agentPool.ts', () => ({
+vi.mock('../../server/agentPool.ts', () => ({
   createAgentPool: vi.fn(() => Promise.resolve(mockAgentPool)),
 }))
 
@@ -30,7 +30,7 @@ const mockNatsClient = {
   subscribe: vi.fn(() => ({ unsubscribe: vi.fn() })),
 }
 
-vi.mock('../server/nats.ts', () => ({
+vi.mock('../../server/nats.ts', () => ({
   getNatsConnection: vi.fn(() => Promise.resolve(mockNatsClient)),
   TOPIC_SUPERVISOR: 'epik.supervisor',
   TOPIC_WORKER_0: 'epik.worker.0',
@@ -43,7 +43,7 @@ vi.mock('../server/nats.ts', () => ({
 // Mock github module
 // ---------------------------------------------------------------------------
 
-vi.mock('../server/github.ts', () => ({
+vi.mock('../../server/github.ts', () => ({
   loadIssueGraph: vi.fn(() =>
     Promise.resolve({
       nodes: [
@@ -64,13 +64,13 @@ vi.mock('../server/github.ts', () => ({
 // Test setup
 // ---------------------------------------------------------------------------
 
-let serverModule: typeof import('../server/index.ts')
+let serverModule: typeof import('../../server/index.ts')
 
 beforeEach(async () => {
   vi.resetModules()
   mockListeners.clear()
   mockAgentPool.getPool.mockReturnValue(mockPool)
-  serverModule = await import('../server/index.ts')
+  serverModule = await import('../../server/index.ts')
 })
 
 afterEach(() => {
@@ -113,7 +113,7 @@ describe('GET /api/issues', () => {
   })
 
   it('returns 500 with a GitHub token message when loadIssueGraph rejects with 401', async () => {
-    const { loadIssueGraph } = await import('../server/github.ts')
+    const { loadIssueGraph } = await import('../../server/github.ts')
     vi.mocked(loadIssueGraph).mockRejectedValueOnce(new Error('Request failed with status 401'))
 
     const res = await request(serverModule.app).get('/api/issues?repo=owner/repo')
@@ -123,7 +123,7 @@ describe('GET /api/issues', () => {
   })
 
   it('returns 500 with a GitHub token message when loadIssueGraph rejects with Bad credentials', async () => {
-    const { loadIssueGraph } = await import('../server/github.ts')
+    const { loadIssueGraph } = await import('../../server/github.ts')
     vi.mocked(loadIssueGraph).mockRejectedValueOnce(new Error('Bad credentials'))
 
     const res = await request(serverModule.app).get('/api/issues?repo=owner/repo')
@@ -133,7 +133,7 @@ describe('GET /api/issues', () => {
   })
 
   it('returns 500 with a GitHub token message when loadIssueGraph rejects with GH_TOKEN error', async () => {
-    const { loadIssueGraph } = await import('../server/github.ts')
+    const { loadIssueGraph } = await import('../../server/github.ts')
     vi.mocked(loadIssueGraph).mockRejectedValueOnce(new Error('GH_TOKEN not set'))
 
     const res = await request(serverModule.app).get('/api/issues?repo=owner/repo')
@@ -143,7 +143,7 @@ describe('GET /api/issues', () => {
   })
 
   it('returns 500 with a GitHub token message when loadIssueGraph rejects with authentication error', async () => {
-    const { loadIssueGraph } = await import('../server/github.ts')
+    const { loadIssueGraph } = await import('../../server/github.ts')
     vi.mocked(loadIssueGraph).mockRejectedValueOnce(new Error('authentication required'))
 
     const res = await request(serverModule.app).get('/api/issues?repo=owner/repo')
@@ -153,7 +153,7 @@ describe('GET /api/issues', () => {
   })
 
   it('returns 500 with the raw error message for non-auth errors', async () => {
-    const { loadIssueGraph } = await import('../server/github.ts')
+    const { loadIssueGraph } = await import('../../server/github.ts')
     vi.mocked(loadIssueGraph).mockRejectedValueOnce(new Error('Network timeout'))
 
     const res = await request(serverModule.app).get('/api/issues?repo=owner/repo')
@@ -171,7 +171,7 @@ describe('POST /api/start', () => {
   })
 
   it('returns 500 when getNatsConnection rejects', async () => {
-    const { getNatsConnection } = await import('../server/nats.ts')
+    const { getNatsConnection } = await import('../../server/nats.ts')
     vi.mocked(getNatsConnection).mockRejectedValueOnce(new Error('NATS unreachable'))
 
     const res = await request(serverModule.app).post('/api/start').send({})
@@ -283,6 +283,41 @@ describe('WebSocket /ws', () => {
           await new Promise((r) => setTimeout(r, 20))
           expect(mockListeners.size).toBe(initialListenerCount)
           resolve()
+        })
+
+        ws.on('error', reject)
+      })
+    })
+  })
+
+  it('POST /api/message does not broadcast an inject event to WebSocket clients', async () => {
+    await new Promise<void>((resolve, reject) => {
+      serverModule.server.listen(0, () => {
+        const addr = serverModule.server.address() as { port: number }
+        const ws = new WebSocket(`ws://localhost:${addr.port}/ws`)
+
+        const received: ServerMessage[] = []
+
+        ws.on('message', async (data) => {
+          const msg: ServerMessage = JSON.parse(data.toString())
+          received.push(msg)
+
+          // After pool_state arrives, POST a message and wait to see if an inject echoes back
+          if (msg.type === 'pool_state') {
+            await request(serverModule.app)
+              .post('/api/message')
+              .send({ agentId: 'supervisor', text: 'hello' })
+
+            // Wait long enough for any echo to arrive
+            await new Promise((r) => setTimeout(r, 200))
+
+            const injectEvents = received.filter(
+              (m) => m.type === 'agent_event' && m.event.kind === 'inject',
+            )
+            expect(injectEvents).toHaveLength(0)
+            ws.close()
+            resolve()
+          }
         })
 
         ws.on('error', reject)

@@ -161,7 +161,6 @@ export async function createAgentPool(): Promise<AgentPool> {
     },
 
     injectMessage(agentId: AgentId, text: string): void {
-      broadcast(agentId, { kind: 'inject', text })
       void handleMessage(agentId, text)
     },
 

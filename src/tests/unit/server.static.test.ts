@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import request from 'supertest'
-import type { PoolState } from '../client/types.ts'
-import { makeAgentPoolMock } from './test-fixtures.ts'
+import type { PoolState } from '../../client/types.ts'
+import { makeAgentPoolMock } from '../test-fixtures.ts'
 
 // ---------------------------------------------------------------------------
 // This test file exercises the static-file-serving branch in index.ts by
@@ -14,11 +14,11 @@ const mockPool: PoolState = [
 
 const { mockListeners, mockAgentPool } = makeAgentPoolMock(mockPool)
 
-vi.mock('../server/agentPool.ts', () => ({
+vi.mock('../../server/agentPool.ts', () => ({
   createAgentPool: vi.fn(() => Promise.resolve(mockAgentPool)),
 }))
 
-vi.mock('../server/nats.ts', () => ({
+vi.mock('../../server/nats.ts', () => ({
   getNatsConnection: vi.fn(() =>
     Promise.resolve({ publish: vi.fn(), subscribe: vi.fn(() => ({ unsubscribe: vi.fn() })) }),
   ),
@@ -29,7 +29,7 @@ vi.mock('../server/nats.ts', () => ({
   TOPIC_LOG: 'epik.log',
 }))
 
-vi.mock('../server/github.ts', () => ({
+vi.mock('../../server/github.ts', () => ({
   loadIssueGraph: vi.fn(() => Promise.resolve({ nodes: [] })),
 }))
 
@@ -54,12 +54,12 @@ vi.mock('fs', async () => {
 // Test setup
 // ---------------------------------------------------------------------------
 
-let serverModule: typeof import('../server/index.ts')
+let serverModule: typeof import('../../server/index.ts')
 
 beforeEach(async () => {
   vi.resetModules()
   mockListeners.clear()
-  serverModule = await import('../server/index.ts')
+  serverModule = await import('../../server/index.ts')
 })
 
 afterEach(() => {

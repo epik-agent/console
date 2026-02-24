@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import type { AgentEvent, AgentId } from '../client/types.ts'
-import type { RunAgentOptions } from '../server/runner.ts'
-import { tick } from './test-fixtures.ts'
+import type { AgentEvent, AgentId } from '../../client/types.ts'
+import type { RunAgentOptions } from '../../server/runner.ts'
+import { tick } from '../test-fixtures.ts'
 
 // ---------------------------------------------------------------------------
 // Mock runner module
@@ -9,7 +9,7 @@ import { tick } from './test-fixtures.ts'
 
 let runAgentImpl: (opts: RunAgentOptions) => Promise<{ interrupt?: () => void }> = async () => ({})
 
-vi.mock('../server/runner.ts', () => ({
+vi.mock('../../server/runner.ts', () => ({
   runAgent: (opts: RunAgentOptions) => runAgentImpl(opts),
 }))
 
@@ -34,7 +34,7 @@ const mockNatsClient = {
   publish: vi.fn(),
 }
 
-vi.mock('../server/nats.ts', () => ({
+vi.mock('../../server/nats.ts', () => ({
   getNatsConnection: vi.fn(() => Promise.resolve(mockNatsClient)),
   TOPIC_SUPERVISOR: 'epik.supervisor',
   TOPIC_WORKER_0: 'epik.worker.0',
@@ -54,7 +54,7 @@ function triggerNatsMessage(topic: string, text: string) {
 }
 
 async function makePool() {
-  const { createAgentPool } = await import('../server/agentPool.ts')
+  const { createAgentPool } = await import('../../server/agentPool.ts')
   return createAgentPool()
 }
 
@@ -225,7 +225,7 @@ describe('agentPool', () => {
     expect(prompts).toContain('injected text')
   })
 
-  it('injectMessage broadcasts an inject event to listeners', async () => {
+  it('injectMessage does not broadcast an inject event to listeners', async () => {
     runAgentImpl = async () => ({})
 
     const pool = await makePool()
@@ -236,10 +236,34 @@ describe('agentPool', () => {
     pool.injectMessage('worker-0', 'injected text')
     await tick(50)
 
-    expect(events).toContainEqual({
+    expect(events).not.toContainEqual({
       agentId: 'worker-0',
       event: { kind: 'inject', text: 'injected text' },
     })
+  })
+
+  it('injectMessage does not re-trigger itself when a listener calls injectMessage in response', async () => {
+    let callCount = 0
+    runAgentImpl = async () => {
+      callCount++
+      return {}
+    }
+
+    const pool = await makePool()
+
+    // Simulate the bug: a listener re-calls injectMessage when it sees an inject event.
+    // With the fix, no inject event is ever broadcast so this listener never fires.
+    // Without the fix, this would loop indefinitely.
+    pool.registerListener((_agentId, event) => {
+      if (event.kind === 'inject') {
+        pool.injectMessage('worker-0', (event as { kind: 'inject'; text: string }).text)
+      }
+    })
+
+    pool.injectMessage('worker-0', 'hello')
+    await tick(100)
+
+    expect(callCount).toBe(1)
   })
 
   it('interrupt calls the interrupt function provided via onInterruptReady', async () => {

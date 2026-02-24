@@ -46,27 +46,62 @@ docker rm -f epik-nats
 ### App
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
-`npm run dev` starts Vite on `:5173` and the Express server on `:3001`
+`pnpm run dev` starts Vite on `:5173` and the Express server on `:3001`
 concurrently, both with hot reload.
 
 Open http://localhost:5173/?repo=owner/repo.
 
 ### Scripts
 
-| Script                 | Description                                       |
-| ---------------------- | ------------------------------------------------- |
-| `npm run dev`          | Vite dev server + Express via tsx (hot reload)    |
-| `npm run server`       | Express server only (tsx watch)                   |
-| `npm run build`        | Type-check + Vite frontend bundle + server bundle |
-| `npm run build:server` | esbuild server bundle only → `dist/server.js`     |
-| `npm run lint`         | ESLint + tsc type-check                           |
-| `npm run format`       | Prettier (write)                                  |
-| `npm run format:check` | Prettier (check only)                             |
-| `npm test`             | Vitest (single run)                               |
+| Script                  | Description                                       |
+| ----------------------- | ------------------------------------------------- |
+| `pnpm run dev`          | Vite dev server + Express via tsx (hot reload)    |
+| `pnpm run server`       | Express server only (tsx watch)                   |
+| `pnpm run build`        | Type-check + Vite frontend bundle + server bundle |
+| `pnpm run build:server` | esbuild server bundle only → `dist/server.js`     |
+| `pnpm run lint`         | ESLint + tsc type-check                           |
+| `pnpm run format`       | Prettier (write)                                  |
+| `pnpm run format:check` | Prettier (check only)                             |
+| `pnpm test`             | All tests (single run)                            |
+| `pnpm test:unit`        | Client + unit tests (no services needed)          |
+| `pnpm test:integration` | Integration tests (requires NATS)                 |
+| `pnpm test:coverage`    | All tests with coverage report                    |
+
+## Testing
+
+### Structure
+
+React component and hook tests live **colocated** with their source files in
+`src/client/` — the standard React community convention. Server-side tests live
+in `src/tests/`, split into two subdirectories:
+
+| Directory                | What goes here                                                                                                       |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `src/tests/unit/`        | Tests that mock all external dependencies (NATS, GitHub, Claude SDK). No real services required. Runs in ~2 seconds. |
+| `src/tests/integration/` | Tests that connect to real infrastructure. Currently: NATS pub/sub. Requires the NATS container to be running.       |
+
+**The rule of thumb:** mock only what you don't own (Claude API, GitHub API).
+Everything you do own — Express, WebSockets, NATS, the agent pool — should run
+real in integration tests, because that's where subtle wiring bugs hide.
+
+### Running locally
+
+Unit tests (no services needed):
+
+```bash
+pnpm test:unit
+```
+
+Integration tests (start NATS first):
+
+```bash
+docker run -d --name epik-nats -p 4222:4222 -p 8222:8222 -p 9222:9222 epik-nats
+pnpm test:integration
+```
 
 ## Build
 
