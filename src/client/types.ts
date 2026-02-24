@@ -63,9 +63,19 @@ export interface IssueNode {
   blockedBy: number[]
 }
 
+/** A directed edge in the issue dependency graph. */
+export interface IssueEdge {
+  /** Issue number of the blocker (prerequisite). */
+  source: number
+  /** Issue number of the blocked issue (dependent). */
+  target: number
+}
+
 /** The dependency graph for a set of GitHub issues. */
 export interface IssueGraph {
   nodes: IssueNode[]
+  /** Directed edges derived from blockedBy; computed once in github.ts. */
+  edges: IssueEdge[]
 }
 
 // ---------------------------------------------------------------------------

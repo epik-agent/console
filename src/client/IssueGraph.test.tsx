@@ -78,6 +78,10 @@ const sampleGraph: IssueGraphType = {
     },
     { number: 3, title: 'Done bug', state: 'closed', type: 'Bug', external: false, blockedBy: [1] },
   ],
+  edges: [
+    { source: 1, target: 2 },
+    { source: 1, target: 3 },
+  ],
 }
 
 const noEvents: Record<AgentId, AgentEvent[]> = {
@@ -190,6 +194,7 @@ describe('IssueGraph', () => {
       nodes: [
         { number: 1, title: 'Solo', state: 'open', type: null, external: false, blockedBy: [] },
       ],
+      edges: [],
     }
     render(<IssueGraph graph={simpleGraph} events={noEvents} />)
     expect(capturedGraphData!.links).toHaveLength(0)

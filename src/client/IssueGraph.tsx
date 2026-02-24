@@ -23,11 +23,6 @@ interface IssueNode extends NodeObject {
   state: 'open' | 'closed'
 }
 
-interface IssueLink {
-  source: number
-  target: number
-}
-
 interface IssueGraphProps {
   graph: IssueGraphType
   events: Record<AgentId, AgentEvent[]>
@@ -127,9 +122,7 @@ export default function IssueGraph({ graph, events, agentIssueMap, repo }: Issue
     state: n.state,
   }))
 
-  const links: IssueLink[] = graph.nodes.flatMap((n) =>
-    n.blockedBy.map((blocker) => ({ source: blocker, target: n.number })),
-  )
+  const links = graph.edges
 
   const nodeColor = (node: NodeObject): string => {
     const issueNode = node as IssueNode

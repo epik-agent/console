@@ -202,6 +202,20 @@ describe('github', () => {
       expect(node?.blockedBy).toEqual([5, 6])
     })
 
+    it('derives directed edges from blockedBy lists', async () => {
+      const graph = await loadIssueGraph('owner', 'repo', makeExec(ISSUE_FIXTURE))
+      // node 2 blockedBy [1] → edge { source: 1, target: 2 }
+      // node 3 blockedBy [1, 2] → edges { source: 1, target: 3 }, { source: 2, target: 3 }
+      expect(graph.edges).toContainEqual({ source: 1, target: 2 })
+      expect(graph.edges).toContainEqual({ source: 1, target: 3 })
+      expect(graph.edges).toContainEqual({ source: 2, target: 3 })
+    })
+
+    it('returns empty edges for a graph with no dependencies', async () => {
+      const graph = await loadIssueGraph('owner', 'repo', makeExec([]))
+      expect(graph.edges).toEqual([])
+    })
+
     it('rejects on gh cli error', async () => {
       const exec = makeExecError(new Error('gh: not found'))
       let caught: Error | null = null

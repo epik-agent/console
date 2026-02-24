@@ -1,5 +1,5 @@
 import { execFile } from 'child_process'
-import type { IssueGraph, IssueNode } from '../client/types.ts'
+import type { IssueEdge, IssueGraph, IssueNode } from '../client/types.ts'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -150,7 +150,11 @@ export async function loadIssueGraph(
     blockedBy: parseBlockedBy(issue.body),
   }))
 
-  return { nodes }
+  const edges: IssueEdge[] = nodes.flatMap((n) =>
+    n.blockedBy.map((blocker) => ({ source: blocker, target: n.number })),
+  )
+
+  return { nodes, edges }
 }
 
 /**

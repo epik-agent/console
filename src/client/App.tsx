@@ -21,7 +21,7 @@ function isValidRepo(value: string): boolean {
   return t.length > 0 && t.includes('/')
 }
 
-const EMPTY_GRAPH: IssueGraphType = { nodes: [] }
+const EMPTY_GRAPH: IssueGraphType = { nodes: [], edges: [] }
 
 const CONNECTION_LABELS: Record<ConnectionStatus, string> = {
   connected: 'Connected',
