@@ -56,7 +56,7 @@ export function useAgentEvents(): AgentEventsState {
     'worker-1': [],
     'worker-2': [],
   })
-  const [pool, setPool] = useState<PoolState>([])
+  const [pool, setPool] = useState<PoolState>({ running: false, agents: [] })
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting')
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null)

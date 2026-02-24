@@ -133,6 +133,22 @@ app.post('/api/start', async (_req, res) => {
 })
 
 /**
+ * `POST /api/stop`
+ *
+ * Publishes `"stop"` to `epik.supervisor` via NATS, which signals the
+ * Supervisor agent to begin graceful shutdown.
+ */
+app.post('/api/stop', async (_req, res) => {
+  try {
+    const nc = await getNatsConnection()
+    nc.publish(TOPIC_SUPERVISOR, 'stop')
+    res.json({ ok: true })
+  } catch (err) {
+    res.status(500).json({ code: 'NATS_UNAVAILABLE', message: String(err) } satisfies ApiError)
+  }
+})
+
+/**
  * `POST /api/message`
  *
  * Body: `{ agentId: AgentId, text: string }`

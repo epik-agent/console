@@ -8,12 +8,15 @@ import { makeAgentPoolMock } from '../test-fixtures.ts'
 // Mock agentPool module
 // ---------------------------------------------------------------------------
 
-const mockPool: PoolState = [
-  { id: 'supervisor', role: 'supervisor', status: 'idle', sessionId: undefined },
-  { id: 'worker-0', role: 'worker', status: 'idle', sessionId: undefined },
-  { id: 'worker-1', role: 'worker', status: 'idle', sessionId: undefined },
-  { id: 'worker-2', role: 'worker', status: 'idle', sessionId: undefined },
-]
+const mockPool: PoolState = {
+  running: false,
+  agents: [
+    { id: 'supervisor', role: 'supervisor', status: 'idle', sessionId: undefined },
+    { id: 'worker-0', role: 'worker', status: 'idle', sessionId: undefined },
+    { id: 'worker-1', role: 'worker', status: 'idle', sessionId: undefined },
+    { id: 'worker-2', role: 'worker', status: 'idle', sessionId: undefined },
+  ],
+}
 
 const { mockListeners, mockAgentPool } = makeAgentPoolMock(mockPool)
 
@@ -175,6 +178,24 @@ describe('POST /api/start', () => {
     vi.mocked(getNatsConnection).mockRejectedValueOnce(new Error('NATS unreachable'))
 
     const res = await request(serverModule.app).post('/api/start').send({})
+    expect(res.status).toBe(500)
+    expect(res.body.code).toBe('NATS_UNAVAILABLE')
+    expect(res.body.message).toMatch(/NATS unreachable/)
+  })
+})
+
+describe('POST /api/stop', () => {
+  it('returns 200 and publishes "stop" to supervisor NATS topic', async () => {
+    const res = await request(serverModule.app).post('/api/stop').send({})
+    expect(res.status).toBe(200)
+    expect(mockNatsClient.publish).toHaveBeenCalledWith('epik.supervisor', 'stop')
+  })
+
+  it('returns 500 when getNatsConnection rejects', async () => {
+    const { getNatsConnection } = await import('../../server/nats.ts')
+    vi.mocked(getNatsConnection).mockRejectedValueOnce(new Error('NATS unreachable'))
+
+    const res = await request(serverModule.app).post('/api/stop').send({})
     expect(res.status).toBe(500)
     expect(res.body.code).toBe('NATS_UNAVAILABLE')
     expect(res.body.message).toMatch(/NATS unreachable/)

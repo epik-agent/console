@@ -73,12 +73,16 @@ describe('types', () => {
     expectTypeOf(ws.sessionId).toExtend<string | undefined>()
   })
 
-  it('PoolState is an array of WorkerState', () => {
-    const pool: PoolState = [
-      { id: 'supervisor', role: 'supervisor', status: 'busy', sessionId: 'abc' },
-      { id: 'worker-0', role: 'worker', status: 'idle', sessionId: undefined },
-    ]
+  it('PoolState has running flag and agents array', () => {
+    const pool: PoolState = {
+      running: false,
+      agents: [
+        { id: 'supervisor', role: 'supervisor', status: 'busy', sessionId: 'abc' },
+        { id: 'worker-0', role: 'worker', status: 'idle', sessionId: undefined },
+      ],
+    }
     expectTypeOf(pool).toExtend<PoolState>()
+    expectTypeOf(pool.running).toExtend<boolean>()
   })
 
   it('IssueNode has the correct shape', () => {
@@ -101,7 +105,7 @@ describe('types', () => {
   })
 
   it('ServerMessage is a discriminated union on type', () => {
-    const m1: ServerMessage = { type: 'pool_state', pool: [] }
+    const m1: ServerMessage = { type: 'pool_state', pool: { running: false, agents: [] } }
     const m2: ServerMessage = {
       type: 'agent_event',
       agentId: 'worker-0',

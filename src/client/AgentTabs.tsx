@@ -27,7 +27,7 @@ function tabLabel(id: AgentId): string {
 }
 
 function workerStatus(pool: PoolState, id: AgentId): 'idle' | 'busy' {
-  const worker: WorkerState | undefined = pool.find((w) => w.id === id)
+  const worker: WorkerState | undefined = pool.agents.find((w) => w.id === id)
   return worker?.status ?? 'idle'
 }
 

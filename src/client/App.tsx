@@ -122,6 +122,8 @@ export default function App() {
     [repoInput],
   )
 
+  const { running } = pool
+
   const handleStart = useCallback(() => {
     void fetch(`${apiBase}/api/start`, {
       method: 'POST',
@@ -129,6 +131,13 @@ export default function App() {
       body: JSON.stringify({ repo }),
     })
   }, [repo, apiBase])
+
+  const handleStop = useCallback(() => {
+    void fetch(`${apiBase}/api/stop`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }, [apiBase])
 
   return (
     <div className="app-root">
@@ -204,9 +213,17 @@ export default function App() {
         <button
           className="btn btn-primary"
           onClick={handleStart}
-          disabled={!repo || connectionStatus !== 'connected'}
+          disabled={!repo || connectionStatus !== 'connected' || running}
         >
           Start
+        </button>
+
+        <button
+          className="btn btn-danger"
+          onClick={handleStop}
+          disabled={!running || connectionStatus !== 'connected'}
+        >
+          Stop
         </button>
 
         <ConnectionBadge status={connectionStatus} />

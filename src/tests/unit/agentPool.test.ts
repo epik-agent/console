@@ -71,28 +71,28 @@ describe('agentPool', () => {
 
   it('initializes with 1 supervisor and 3 workers', async () => {
     const pool = await makePool()
-    const state = pool.getPool()
+    const { agents } = pool.getPool()
 
-    expect(state).toHaveLength(4)
-    const supervisor = state.find((w) => w.id === 'supervisor')
+    expect(agents).toHaveLength(4)
+    const supervisor = agents.find((w) => w.id === 'supervisor')
     expect(supervisor).toBeDefined()
     expect(supervisor?.role).toBe('supervisor')
 
-    const workers = state.filter((w) => w.role === 'worker')
+    const workers = agents.filter((w) => w.role === 'worker')
     expect(workers).toHaveLength(3)
     expect(workers.map((w) => w.id).sort()).toEqual(['worker-0', 'worker-1', 'worker-2'])
   })
 
   it('initializes all agents with idle status', async () => {
     const pool = await makePool()
-    for (const agent of pool.getPool()) {
+    for (const agent of pool.getPool().agents) {
       expect(agent.status).toBe('idle')
     }
   })
 
   it('initializes all agents with undefined sessionId', async () => {
     const pool = await makePool()
-    for (const agent of pool.getPool()) {
+    for (const agent of pool.getPool().agents) {
       expect(agent.sessionId).toBeUndefined()
     }
   })
@@ -112,17 +112,17 @@ describe('agentPool', () => {
 
     const pool = await makePool()
 
-    expect(pool.getPool().find((w) => w.id === 'supervisor')?.status).toBe('idle')
+    expect(pool.getPool().agents.find((w) => w.id === 'supervisor')?.status).toBe('idle')
 
     triggerNatsMessage('epik.supervisor', 'hello supervisor')
     await tick()
 
-    expect(pool.getPool().find((w) => w.id === 'supervisor')?.status).toBe('busy')
+    expect(pool.getPool().agents.find((w) => w.id === 'supervisor')?.status).toBe('busy')
 
     resolveTurn!()
     await tick()
 
-    expect(pool.getPool().find((w) => w.id === 'supervisor')?.status).toBe('idle')
+    expect(pool.getPool().agents.find((w) => w.id === 'supervisor')?.status).toBe('idle')
   })
 
   it('transitions worker status idle → busy → idle on message', async () => {
@@ -134,17 +134,17 @@ describe('agentPool', () => {
 
     const pool = await makePool()
 
-    expect(pool.getPool().find((w) => w.id === 'worker-1')?.status).toBe('idle')
+    expect(pool.getPool().agents.find((w) => w.id === 'worker-1')?.status).toBe('idle')
 
     triggerNatsMessage('epik.worker.1', 'work on issue 5')
     await tick()
 
-    expect(pool.getPool().find((w) => w.id === 'worker-1')?.status).toBe('busy')
+    expect(pool.getPool().agents.find((w) => w.id === 'worker-1')?.status).toBe('busy')
 
     resolveTurn!()
     await tick()
 
-    expect(pool.getPool().find((w) => w.id === 'worker-1')?.status).toBe('idle')
+    expect(pool.getPool().agents.find((w) => w.id === 'worker-1')?.status).toBe('idle')
   })
 
   it('broadcasts AgentEvents to registered listeners', async () => {
@@ -304,7 +304,7 @@ describe('agentPool', () => {
     triggerNatsMessage('epik.supervisor', 'go')
     await tick(50)
 
-    const supervisor = pool.getPool().find((w) => w.id === 'supervisor')
+    const supervisor = pool.getPool().agents.find((w) => w.id === 'supervisor')
     expect(supervisor?.sessionId).toBe('session-abc-123')
   })
 
@@ -326,6 +326,6 @@ describe('agentPool', () => {
 
     expect(capturedSessionIds[0]).toBeUndefined()
     expect(capturedSessionIds[1]).toBe('sess-xyz')
-    expect(pool.getPool().find((w) => w.id === 'supervisor')?.sessionId).toBe('sess-xyz')
+    expect(pool.getPool().agents.find((w) => w.id === 'supervisor')?.sessionId).toBe('sess-xyz')
   })
 })

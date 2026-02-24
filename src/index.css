@@ -329,6 +329,17 @@ body {
   background: var(--brand-accent-hover);
 }
 
+.btn-danger {
+  background: #c0392b;
+  color: #fff;
+  font-weight: 600;
+  padding: 6px var(--space-5);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #a93226;
+}
+
 .btn-ghost {
   background: transparent;
   color: var(--brand-text-secondary);

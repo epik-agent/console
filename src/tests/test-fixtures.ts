@@ -35,7 +35,9 @@ export type AgentEventListener = (agentId: AgentId, event: AgentEvent) => void
  * vi.mock('../server/agentPool.ts') factories.  Call once at module scope,
  * then close over the returned objects inside vi.mock.
  */
-export function makeAgentPoolMock(pool: import('../client/types.ts').PoolState = []) {
+export function makeAgentPoolMock(
+  pool: import('../client/types.ts').PoolState = { running: false, agents: [] },
+) {
   const mockListeners = new Set<AgentEventListener>()
   const mockAgentPool = {
     getPool: vi.fn(() => pool),
@@ -45,6 +47,7 @@ export function makeAgentPoolMock(pool: import('../client/types.ts').PoolState =
     }),
     injectMessage: vi.fn(),
     interrupt: vi.fn(),
+    setRunning: vi.fn(),
   }
   return { mockListeners, mockAgentPool }
 }

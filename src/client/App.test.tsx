@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import App from './App'
 import { makeEvents, makeUseAgentEventsMock } from './test-fixtures'
-import type { AgentId } from './types'
+import type { AgentId, PoolState } from './types'
 
 // Mock useAgentEvents to avoid WebSocket connections in tests
 vi.mock('./useAgentEvents', () => ({
@@ -92,6 +92,65 @@ describe('App', () => {
     render(<App />)
     const startButton = screen.getByRole('button', { name: /start/i })
     expect(startButton).toBeDisabled()
+  })
+
+  it('renders the Stop button', () => {
+    render(<App />)
+    expect(screen.getByRole('button', { name: /stop/i })).toBeInTheDocument()
+  })
+
+  it('Stop button is disabled when running is false', () => {
+    render(<App />)
+    const stopButton = screen.getByRole('button', { name: /stop/i })
+    expect(stopButton).toBeDisabled()
+  })
+
+  it('Start button is disabled when running is true', async () => {
+    const useAgentEventsModule = await import('./useAgentEvents')
+    vi.spyOn(useAgentEventsModule, 'useAgentEvents').mockReturnValue({
+      events: makeEvents(),
+      pool: { running: true, agents: [] } as PoolState,
+      connectionStatus: 'connected',
+      sendMessage: vi.fn(),
+      interrupt: vi.fn(),
+    })
+
+    render(<App />)
+    const startButton = screen.getByRole('button', { name: /start/i })
+    expect(startButton).toBeDisabled()
+  })
+
+  it('Stop button is enabled when running is true', async () => {
+    const useAgentEventsModule = await import('./useAgentEvents')
+    vi.spyOn(useAgentEventsModule, 'useAgentEvents').mockReturnValue({
+      events: makeEvents(),
+      pool: { running: true, agents: [] } as PoolState,
+      connectionStatus: 'connected',
+      sendMessage: vi.fn(),
+      interrupt: vi.fn(),
+    })
+
+    render(<App />)
+    const stopButton = screen.getByRole('button', { name: /stop/i })
+    expect(stopButton).not.toBeDisabled()
+  })
+
+  it('calls /api/stop when Stop button is clicked', async () => {
+    const useAgentEventsModule = await import('./useAgentEvents')
+    vi.spyOn(useAgentEventsModule, 'useAgentEvents').mockReturnValue({
+      events: makeEvents(),
+      pool: { running: true, agents: [] } as PoolState,
+      connectionStatus: 'connected',
+      sendMessage: vi.fn(),
+      interrupt: vi.fn(),
+    })
+
+    const user = userEvent.setup()
+    render(<App />)
+    const stopButton = screen.getByRole('button', { name: /stop/i })
+    await user.click(stopButton)
+
+    expect(mockFetch).toHaveBeenCalledWith('/api/stop', expect.objectContaining({ method: 'POST' }))
   })
 
   it('handles fetch error for issues gracefully (sets empty graph)', async () => {
@@ -238,7 +297,7 @@ describe('App', () => {
       const useAgentEventsModule = await import('./useAgentEvents')
       vi.spyOn(useAgentEventsModule, 'useAgentEvents').mockReturnValue({
         events: makeEvents({ 'worker-0': [{ kind: 'inject', text: 'Please work on issue #17.' }] }),
-        pool: [],
+        pool: { running: false, agents: [] } as PoolState,
         connectionStatus: 'connected',
         sendMessage: vi.fn(),
         interrupt: vi.fn(),
@@ -257,7 +316,7 @@ describe('App', () => {
         events: makeEvents({
           'worker-0': [{ kind: 'inject', text: 'Please work on issue #17.' }, { kind: 'turn_end' }],
         }),
-        pool: [],
+        pool: { running: false, agents: [] } as PoolState,
         connectionStatus: 'connected',
         sendMessage: vi.fn(),
         interrupt: vi.fn(),

@@ -21,18 +21,21 @@ export function makeEvents(
 }
 
 /** Standard four-agent pool fixture covering all statuses used in tests. */
-export const defaultPool: PoolState = [
-  { id: 'supervisor', role: 'supervisor', status: 'idle', sessionId: undefined },
-  { id: 'worker-0', role: 'worker', status: 'idle', sessionId: undefined },
-  { id: 'worker-1', role: 'worker', status: 'busy', sessionId: 'abc' },
-  { id: 'worker-2', role: 'worker', status: 'idle', sessionId: undefined },
-]
+export const defaultPool: PoolState = {
+  running: false,
+  agents: [
+    { id: 'supervisor', role: 'supervisor', status: 'idle', sessionId: undefined },
+    { id: 'worker-0', role: 'worker', status: 'idle', sessionId: undefined },
+    { id: 'worker-1', role: 'worker', status: 'busy', sessionId: 'abc' },
+    { id: 'worker-2', role: 'worker', status: 'idle', sessionId: undefined },
+  ],
+}
 
 /** Default useAgentEvents mock return value. */
 export function makeUseAgentEventsMock() {
   return {
     events: makeEvents(),
-    pool: [],
+    pool: { running: false, agents: [] } as PoolState,
     connectionStatus: 'connected' as const,
     sendMessage: vi.fn(),
     interrupt: vi.fn(),

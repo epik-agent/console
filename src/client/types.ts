@@ -38,7 +38,10 @@ export interface WorkerState {
 }
 
 /** Snapshot of the full agent pool. */
-export type PoolState = WorkerState[]
+export interface PoolState {
+  running: boolean
+  agents: WorkerState[]
+}
 
 // ---------------------------------------------------------------------------
 // Issue graph

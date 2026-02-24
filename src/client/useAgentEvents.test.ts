@@ -79,10 +79,13 @@ describe('useAgentEvents', () => {
       ws.open()
     })
 
-    const pool: PoolState = [
-      { id: 'supervisor', role: 'supervisor', status: 'idle', sessionId: undefined },
-      { id: 'worker-0', role: 'worker', status: 'busy', sessionId: 'abc' },
-    ]
+    const pool: PoolState = {
+      running: true,
+      agents: [
+        { id: 'supervisor', role: 'supervisor', status: 'idle', sessionId: undefined },
+        { id: 'worker-0', role: 'worker', status: 'busy', sessionId: 'abc' },
+      ],
+    }
     const msg: ServerMessage = { type: 'pool_state', pool }
 
     act(() => {
@@ -223,7 +226,7 @@ describe('useAgentEvents', () => {
     })
 
     // Pool and events should remain at their initial values
-    expect(result.current.pool).toEqual([])
+    expect(result.current.pool).toEqual({ running: false, agents: [] })
     expect(result.current.events['supervisor']).toHaveLength(0)
   })
 
@@ -296,7 +299,7 @@ describe('useAgentEvents', () => {
     })
 
     // State should remain unchanged
-    expect(result.current.pool).toEqual([])
+    expect(result.current.pool).toEqual({ running: false, agents: [] })
     expect(result.current.events['supervisor']).toHaveLength(0)
   })
 

@@ -43,6 +43,8 @@ export interface AgentPool {
   injectMessage(agentId: AgentId, text: string): void
   /** Interrupts the in-progress turn of the specified agent, if any. */
   interrupt(agentId: AgentId): void
+  /** Sets the pool-wide running flag. */
+  setRunning(value: boolean): void
 }
 
 // ---------------------------------------------------------------------------
@@ -87,6 +89,9 @@ export async function createAgentPool(): Promise<AgentPool> {
       currentInterrupt: undefined,
     })
   }
+
+  // Pool-wide running flag
+  let running = false
 
   // Listener registry
   const listeners = new Set<AgentEventListener>()
@@ -147,12 +152,15 @@ export async function createAgentPool(): Promise<AgentPool> {
 
   return {
     getPool(): PoolState {
-      return Array.from(agentStates.values()).map(({ id, role, status, sessionId }) => ({
-        id,
-        role,
-        status,
-        sessionId,
-      }))
+      return {
+        running,
+        agents: Array.from(agentStates.values()).map(({ id, role, status, sessionId }) => ({
+          id,
+          role,
+          status,
+          sessionId,
+        })),
+      }
     },
 
     registerListener(cb: AgentEventListener): () => void {
@@ -167,6 +175,10 @@ export async function createAgentPool(): Promise<AgentPool> {
     interrupt(agentId: AgentId): void {
       const state = agentStates.get(agentId)
       state?.currentInterrupt?.()
+    },
+
+    setRunning(value: boolean): void {
+      running = value
     },
   }
 }
