@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently \"vite\" \"npm run server\"",
+    "stop": "lsof -ti:3001 -ti:5173 | xargs kill -9 2>/dev/null; true",
     "server": "tsx watch src/server/index.ts",
     "build": "tsc -b && vite build && npm run build:server",
     "build:client": "vite build",

@@ -57,19 +57,20 @@ Open http://localhost:5173/?repo=owner/repo.
 
 ### Scripts
 
-| Script                  | Description                                       |
-| ----------------------- | ------------------------------------------------- |
-| `pnpm run dev`          | Vite dev server + Express via tsx (hot reload)    |
-| `pnpm run server`       | Express server only (tsx watch)                   |
-| `pnpm run build`        | Type-check + Vite frontend bundle + server bundle |
-| `pnpm run build:server` | esbuild server bundle only → `dist/server.js`     |
-| `pnpm run lint`         | ESLint + tsc type-check                           |
-| `pnpm run format`       | Prettier (write)                                  |
-| `pnpm run format:check` | Prettier (check only)                             |
-| `pnpm test`             | All tests (single run)                            |
-| `pnpm test:unit`        | Client + unit tests (no services needed)          |
-| `pnpm test:integration` | Integration tests (requires NATS)                 |
-| `pnpm test:coverage`    | All tests with coverage report                    |
+| Script                  | Description                                         |
+| ----------------------- | --------------------------------------------------- |
+| `pnpm run dev`          | Vite dev server + Express via tsx (hot reload)      |
+| `pnpm run stop`         | Kill Vite (:5173) and Express (:3001) dev processes |
+| `pnpm run server`       | Express server only (tsx watch)                     |
+| `pnpm run build`        | Type-check + Vite frontend bundle + server bundle   |
+| `pnpm run build:server` | esbuild server bundle only → `dist/server.js`       |
+| `pnpm run lint`         | ESLint + tsc type-check                             |
+| `pnpm run format`       | Prettier (write)                                    |
+| `pnpm run format:check` | Prettier (check only)                               |
+| `pnpm test`             | All tests (single run)                              |
+| `pnpm test:unit`        | Client + unit tests (no services needed)            |
+| `pnpm test:integration` | Integration tests (requires NATS)                   |
+| `pnpm test:coverage`    | All tests with coverage report                      |
 
 ## Testing
 
