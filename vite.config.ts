@@ -1,9 +1,30 @@
+import type { Plugin } from 'vite'
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 
+// Suppress EPIPE/connection-reset errors on the raw TCP socket during WS
+// proxy upgrade. These happen when the browser closes the connection before
+// or during the handshake (normal on page reload, Playwright test teardown,
+// etc.). Without a listener the unhandled 'error' event crashes Vite.
+//
+// We attach a no-op error listener in the httpServer 'upgrade' event — before
+// http-proxy or the HMR server touch the socket — so any EPIPE that fires
+// during the handshake window has a handler and doesn't propagate as an
+// uncaught exception.
+function suppressWsUpgradeEpipe(): Plugin {
+  return {
+    name: 'suppress-ws-upgrade-epipe',
+    configureServer(server) {
+      server.httpServer?.on('upgrade', (_req, socket) => {
+        socket.on('error', () => {})
+      })
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), suppressWsUpgradeEpipe()],
   server: {
     host: '0.0.0.0',
     proxy: {
@@ -11,16 +32,6 @@ export default defineConfig({
       '/ws': {
         target: 'ws://localhost:3001',
         ws: true,
-        configure: (proxy) => {
-          // Intercept proxyReqWs before Vite adds its socket error logger,
-          // then remove all socket error listeners so the EPIPE isn't logged.
-          // EPIPE is safe to ignore here: it means the browser closed the WS
-          // connection before the proxy finished writing, which is normal during
-          // HMR reconnects and page reloads.
-          proxy.on('proxyReqWs', (_proxyReq, _req, socket) => {
-            setImmediate(() => socket.removeAllListeners('error'))
-          })
-        },
       },
     },
   },
