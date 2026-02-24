@@ -228,6 +228,7 @@ export default function IssueGraph({ graph, events, agentIssueMap, repo }: Issue
         linkDirectionalArrowRelPos={1}
         linkColor={() => palette.dark.graph.link}
         backgroundColor="transparent"
+        autoPauseRedraw={false}
       />
 
       {/* Legend */}
