@@ -90,7 +90,7 @@ export function runGhCommand(args: string[], bin = 'gh'): Promise<string> {
 // ---------------------------------------------------------------------------
 
 const ISSUES_QUERY = `
-{
+query($owner: String!, $repo: String!) {
   repository(owner: $owner, name: $repo) {
     issues(first: 100, states: [OPEN]) {
       nodes {
@@ -141,7 +141,7 @@ export async function loadIssueGraph(
   const nodes: IssueNode[] = issues.nodes.map((issue) => ({
     number: issue.number,
     title: issue.title,
-    state: issue.state as 'open' | 'closed',
+    state: issue.state.toLowerCase() as 'open' | 'closed',
     type: parseType(issue.labels.nodes),
     external: false,
   }))
