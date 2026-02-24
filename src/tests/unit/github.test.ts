@@ -202,6 +202,57 @@ describe('github', () => {
       expect(node?.blockedBy).toEqual([5, 6])
     })
 
+    it('parses a single "**Depends on:**" inline dependency', async () => {
+      const issues = [
+        {
+          number: 5,
+          title: 'Dual-model thinking loop',
+          state: 'open',
+          labels: [],
+          body: '## Context\n\nSome text.\n\n**Depends on:** #4 (agent skeleton)\n',
+        },
+      ]
+      const graph = await loadIssueGraph('owner', 'repo', makeExec(issues))
+      const node = graph.nodes.find((n) => n.number === 5)
+      expect(node?.blockedBy).toEqual([4])
+    })
+
+    it('parses multiple "**Depends on:**" inline dependencies', async () => {
+      const issues = [
+        {
+          number: 5,
+          title: 'Dual-model thinking loop',
+          state: 'open',
+          labels: [],
+          body: '**Depends on:** #4 (agent skeleton), #1 (message schema)\n',
+        },
+      ]
+      const graph = await loadIssueGraph('owner', 'repo', makeExec(issues))
+      const node = graph.nodes.find((n) => n.number === 5)
+      expect(node?.blockedBy).toEqual([4, 1])
+    })
+
+    it('derives directed edges from "**Depends on:**" lists', async () => {
+      const issues = [
+        {
+          number: 1,
+          title: 'Base issue',
+          state: 'open',
+          labels: [],
+          body: null,
+        },
+        {
+          number: 5,
+          title: 'Dependent issue',
+          state: 'open',
+          labels: [],
+          body: '**Depends on:** #1 (base)\n',
+        },
+      ]
+      const graph = await loadIssueGraph('owner', 'repo', makeExec(issues))
+      expect(graph.edges).toContainEqual({ source: 1, target: 5 })
+    })
+
     it('derives directed edges from blockedBy lists', async () => {
       const graph = await loadIssueGraph('owner', 'repo', makeExec(ISSUE_FIXTURE))
       // node 2 blockedBy [1] → edge { source: 1, target: 2 }

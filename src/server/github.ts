@@ -46,10 +46,15 @@ interface RawPR {
 const TYPE_LABELS = new Set(['Feature', 'Task', 'Bug'])
 
 /**
- * Parse the "## Blocked by" section from an issue body.
+ * Parse dependency issue numbers from an issue body.
  *
- * Recognizes lines of the form `- #N` within the section that follows
- * a `## Blocked by` heading. Stops at the next `##` heading.
+ * Recognizes two conventions:
+ *
+ * 1. A `## Blocked by` section containing lines of the form `- #N`.
+ *    Stops at the next `##` heading.
+ *
+ * 2. An inline `**Depends on:**` line containing `#N` references anywhere
+ *    on the same line, e.g. `**Depends on:** #4 (agent skeleton), #1 (schema)`.
  */
 function parseBlockedBy(body: string | null): number[] {
   if (!body) return []
@@ -71,6 +76,14 @@ function parseBlockedBy(body: string | null): number[] {
       const match = trimmed.match(/^-\s+#(\d+)/)
       if (match) {
         blockedBy.push(parseInt(match[1], 10))
+      }
+      continue
+    }
+
+    // Inline "**Depends on:**" convention: extract all #N references on the line
+    if (/^\*\*depends\s+on:\*\*/i.test(trimmed)) {
+      for (const m of trimmed.matchAll(/#(\d+)/g)) {
+        blockedBy.push(parseInt(m[1], 10))
       }
     }
   }
@@ -116,7 +129,7 @@ export function runGhCommand(args: string[], bin = 'gh'): Promise<string> {
  * Load the issue dependency graph for a GitHub repository.
  *
  * Calls `gh api /repos/{owner}/{repo}/issues?state=open&per_page=100` and
- * parses each issue body for "## Blocked by" sections to build the graph.
+ * parses each issue body for dependency references to build the graph.
  *
  * @param owner - GitHub organization or user name.
  * @param repo  - Repository name.
