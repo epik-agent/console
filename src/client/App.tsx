@@ -186,7 +186,7 @@ export default function App() {
             <circle cx="14" cy="17" r="1.6" fill="var(--brand-accent-base)" opacity="0.7" />
           </svg>
           <span>
-            epi<span style={{ fontStyle: 'italic' }}>k</span>
+            Epik
           </span>
         </div>
 
