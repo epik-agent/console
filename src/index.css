@@ -5,7 +5,7 @@
    are defined locally and reference --brand-* where appropriate.
    ========================================================================= */
 
-@import '@epik-agent/brand/brand.css';
+@import './brand.css';
 
 /* ---- Reset ---- */
 *,

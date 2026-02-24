@@ -1,0 +1,111 @@
+/* Copied from /Users/mcneill/src/Epik/brand/dist/brand.css – do not edit here, update brand package instead */
+
+/* Font imports */
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap');
+
+:root,
+[data-theme="dark"] {
+  --brand-font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  --brand-font-mono: 'Geist Mono', ui-monospace, monospace;
+  --brand-bg-root: #0a0a0a;
+  --brand-bg-surface: #111111;
+  --brand-bg-raised: #1a1a1a;
+  --brand-bg-input: #141414;
+  --brand-bg-bar: #0e0e0e;
+  --brand-bg-hover: #1f1f1f;
+  --brand-bg-active: #262626;
+  --brand-bg-overlay: rgba(0, 0, 0, 0.60);
+  --brand-text-primary: #ededed;
+  --brand-text-secondary: #a0a0a0;
+  --brand-text-muted: #666666;
+  --brand-text-faint: #404040;
+  --brand-text-inverse: #0a0a0a;
+  --brand-accent-base: #00e599;
+  --brand-accent-hover: #33edb3;
+  --brand-accent-muted: rgba(0, 229, 153, 0.12);
+  --brand-accent-onAccent: #0a0a0a;
+  --brand-semantic-success: #00e599;
+  --brand-semantic-successMuted: rgba(0, 229, 153, 0.12);
+  --brand-semantic-warning: #f5a623;
+  --brand-semantic-warningMuted: rgba(245, 166, 35, 0.12);
+  --brand-semantic-error: #ef4444;
+  --brand-semantic-errorMuted: rgba(239, 68, 68, 0.12);
+  --brand-semantic-info: #a0a0a0;
+  --brand-border-default: #1f1f1f;
+  --brand-border-strong: #333333;
+  --brand-graph-closed: #34d399;
+  --brand-graph-open: #f5a623;
+  --brand-graph-active: #00e599;
+  --brand-graph-link: rgba(255, 255, 255, 0.10);
+}
+
+[data-theme="light"] {
+  --brand-font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  --brand-font-mono: 'Geist Mono', ui-monospace, monospace;
+  --brand-bg-root: #fafafa;
+  --brand-bg-surface: #f0f0f0;
+  --brand-bg-raised: #e5e5e5;
+  --brand-bg-input: #ffffff;
+  --brand-bg-bar: #f0f0f0;
+  --brand-bg-hover: #e0e0e0;
+  --brand-bg-active: #d4d4d4;
+  --brand-bg-overlay: rgba(0, 0, 0, 0.15);
+  --brand-text-primary: #0a0a0a;
+  --brand-text-secondary: #525252;
+  --brand-text-muted: #737373;
+  --brand-text-faint: #a3a3a3;
+  --brand-text-inverse: #ededed;
+  --brand-accent-base: #00b377;
+  --brand-accent-hover: #009966;
+  --brand-accent-muted: rgba(0, 179, 119, 0.10);
+  --brand-accent-onAccent: #ffffff;
+  --brand-semantic-success: #00b377;
+  --brand-semantic-successMuted: rgba(0, 179, 119, 0.10);
+  --brand-semantic-warning: #d4940a;
+  --brand-semantic-warningMuted: rgba(212, 148, 10, 0.10);
+  --brand-semantic-error: #dc2626;
+  --brand-semantic-errorMuted: rgba(220, 38, 38, 0.08);
+  --brand-semantic-info: #525252;
+  --brand-border-default: #e0e0e0;
+  --brand-border-strong: #c7c7c7;
+  --brand-graph-closed: #34d399;
+  --brand-graph-open: #d4940a;
+  --brand-graph-active: #00b377;
+  --brand-graph-link: rgba(0, 0, 0, 0.08);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --brand-bg-root: #fafafa;
+    --brand-bg-surface: #f0f0f0;
+    --brand-bg-raised: #e5e5e5;
+    --brand-bg-input: #ffffff;
+    --brand-bg-bar: #f0f0f0;
+    --brand-bg-hover: #e0e0e0;
+    --brand-bg-active: #d4d4d4;
+    --brand-bg-overlay: rgba(0, 0, 0, 0.15);
+    --brand-text-primary: #0a0a0a;
+    --brand-text-secondary: #525252;
+    --brand-text-muted: #737373;
+    --brand-text-faint: #a3a3a3;
+    --brand-text-inverse: #ededed;
+    --brand-accent-base: #00b377;
+    --brand-accent-hover: #009966;
+    --brand-accent-muted: rgba(0, 179, 119, 0.10);
+    --brand-accent-onAccent: #ffffff;
+    --brand-semantic-success: #00b377;
+    --brand-semantic-successMuted: rgba(0, 179, 119, 0.10);
+    --brand-semantic-warning: #d4940a;
+    --brand-semantic-warningMuted: rgba(212, 148, 10, 0.10);
+    --brand-semantic-error: #dc2626;
+    --brand-semantic-errorMuted: rgba(220, 38, 38, 0.08);
+    --brand-semantic-info: #525252;
+    --brand-border-default: #e0e0e0;
+    --brand-border-strong: #c7c7c7;
+    --brand-graph-closed: #34d399;
+    --brand-graph-open: #d4940a;
+    --brand-graph-active: #00b377;
+    --brand-graph-link: rgba(0, 0, 0, 0.08);
+  }
+}

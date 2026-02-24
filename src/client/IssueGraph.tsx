@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
 import type { NodeObject } from 'react-force-graph-2d'
-import { palette } from '@epik-agent/brand'
+import { themes as palette } from './theme'
 import type { AgentEvent, AgentId, IssueGraph as IssueGraphType } from './types'
 
 // ---------------------------------------------------------------------------

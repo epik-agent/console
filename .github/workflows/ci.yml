@@ -30,8 +30,6 @@ jobs:
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
       - if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: pnpm install --frozen-lockfile
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
       - run: pnpm test -- --coverage
       - uses: codecov/codecov-action@v5
         with:
