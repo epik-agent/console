@@ -47,15 +47,40 @@ Open http://localhost:5173 and enter `epik-agent/console` (or any
 ### Prerequisites
 
 - Node.js ≥ 20
-- `nats-server` binary on PATH (`brew install nats-server` on macOS)
+- Docker (for NATS)
 - `gh` CLI authenticated (`gh auth login`)
 
-### Start
+### Start NATS
+
+NATS runs in Docker. Build the image once and leave the container running — you
+normally won't need to restart it between coding sessions.
 
 ```bash
-nats-server &        # start NATS in the background
+docker build -t epik-nats nats/
+docker run -d --name epik-nats \
+  -p 4222:4222 \
+  -p 8222:8222 \
+  -p 9222:9222 \
+  epik-nats
+```
+
+| Port | Purpose |
+| ---- | ------- |
+| 4222 | NATS client (TCP) |
+| 8222 | HTTP monitoring — http://localhost:8222 |
+| 9222 | WebSocket client |
+
+To stop and remove the container:
+
+```bash
+docker rm -f epik-nats
+```
+
+### Start the app
+
+```bash
 npm install
-npm run dev          # Vite on :5173, Express on :3001
+npm run dev    # Vite on :5173 + Express on :3001 (hot reload)
 ```
 
 Open http://localhost:5173/?repo=owner/repo.
@@ -64,7 +89,6 @@ Open http://localhost:5173/?repo=owner/repo.
 
 | Script                 | Description                                       |
 | ---------------------- | ------------------------------------------------- |
-| `npm run docker`       | Start Docker Compose with GH token from keyring   |
 | `npm run dev`          | Vite dev server + Express via tsx (hot reload)    |
 | `npm run server`       | Express server only (tsx watch)                   |
 | `npm run build`        | Type-check + Vite frontend bundle + server bundle |

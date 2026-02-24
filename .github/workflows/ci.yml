@@ -10,9 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     services:
       nats:
-        image: nats:latest
+        image: ghcr.io/epik-agent/console/nats:latest
         ports:
           - 4222:4222
+          - 8222:8222
+          - 9222:9222
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
